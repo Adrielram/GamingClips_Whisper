@@ -61,7 +61,9 @@ def main():
     print("    • Modelo: large-v3 (máxima calidad)")
     print("    • Beam size: 5 (mejor precisión)")
     print("    • Compute type: float16 (velocidad óptima)")
+    print("    • Word timestamps: activado (sincronización precisa)")
     print("    • Prompt argentino: activado")
+    print("    • VAD split: activado (mejor segmentación)")
     print("    • Device: cuda (GPU si está disponible)")
     print()
     

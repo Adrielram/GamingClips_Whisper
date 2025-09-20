@@ -368,7 +368,12 @@ def main():
                 # If device wasn't CUDA, re-raise the exception
                 raise
 
-        transcribe_kwargs = dict(beam_size=args.beam_size)
+        transcribe_kwargs = dict(
+            beam_size=args.beam_size,
+            word_timestamps=True,  # CLAVE: Habilitar timestamps por palabra
+            condition_on_previous_text=False,  # Evitar deriva temporal
+            temperature=0.0  # Máxima determinismo para mejor sincronización
+        )
         # Add optional argentine prompt (long takes precedence if both flags set)
         if getattr(args, 'use_argentine_prompt_long', False):
             transcribe_kwargs['initial_prompt'] = ARGENTINE_GAMING_PROMPT_LONG
