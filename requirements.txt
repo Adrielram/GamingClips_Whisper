@@ -1,0 +1,18 @@
+# Core transcription dependencies
+faster-whisper==1.2.0
+whisperx>=3.1.0
+
+# Audio processing
+pydub>=0.25.1
+av>=15.1.0
+
+# Optional post-processing
+symspellpy>=6.7.8
+
+# Utilities
+coloredlogs>=15.0.1
+humanfriendly>=10.0
+
+# GPU support (optional)
+# torch>=2.0.0
+# torchaudio>=2.0.0

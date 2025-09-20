@@ -1,0 +1,1 @@
+ffmpeg -i input.mp4 -af "highpass=f=200, lowpass=f=3000" cleaned_audio.wav
