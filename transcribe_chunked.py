@@ -49,11 +49,11 @@ WHISPER_CONFIG = {
     "hallucination_silence_threshold": 2.0
 }
 
-# VAD optimizado para segmentación
+# VAD optimizado para detectar silencios
 VAD_CONFIG = {
-    "threshold": 0.4,  # Más conservador para mejor segmentación
+    "threshold": 0.35,  # Más sensible para detectar silencios
     "min_speech_duration_ms": 200,
-    "min_silence_duration_ms": 100,  # Detecta pausas pequeñas
+    "min_silence_duration_ms": 300,  # Detecta pausas de 300ms+
     "speech_pad_ms": 50
 }
 
@@ -67,7 +67,10 @@ CHUNK_CONFIG = {
     "natural_breaks": ['.', '!', '?', ',', ';', ':', ' y ', ' o ', ' pero ', ' aunque '],
     "prefer_breaks": ['.', '!', '?'],  # Preferir estos para cortar
     "word_distribution": True,  # Distribuir palabras temporalmente
-    "sync_conservative": True   # Modo conservador para mantener sincronización
+    "sync_conservative": True,   # Modo conservador para mantener sincronización
+    "silence_detection": True,   # Detectar y respetar silencios
+    "min_silence_gap": 0.3,     # Mínimo silencio para crear pausa (300ms)
+    "max_silence_extend": 0.5    # Máximo silencio a extender en subtítulo
 }
 
 def format_timestamp(seconds):
@@ -167,10 +170,37 @@ def distribute_chunks_temporally(chunks, start_time, end_time):
     
     return segments
 
+def detect_silence_gaps(segments):
+    """
+    Detecta gaps de silencio entre segmentos
+    """
+    silence_gaps = []
+    
+    for i in range(len(segments) - 1):
+        current_end = segments[i]["end"]
+        next_start = segments[i + 1]["start"]
+        gap_duration = next_start - current_end
+        
+        if gap_duration >= CHUNK_CONFIG["min_silence_gap"]:
+            silence_gaps.append({
+                "start": current_end,
+                "end": next_start,
+                "duration": gap_duration
+            })
+    
+    return silence_gaps
+
 def process_segments_with_precise_timing(segments):
     """
-    Procesa segmentos usando timing preciso de palabras individuales
+    Procesa segmentos usando timing preciso y respetando silencios
     """
+    if not segments:
+        return []
+    
+    # Detectar gaps de silencio
+    silence_gaps = detect_silence_gaps(segments)
+    print(f"🔇 Detectados {len(silence_gaps)} gaps de silencio")
+    
     chunked_segments = []
     
     for segment in segments:
@@ -199,11 +229,28 @@ def process_segments_with_precise_timing(segments):
             if current_chunk:
                 word_chunks.append(current_chunk)
             
-            # Crear segmentos con timing preciso
-            for chunk in word_chunks:
-                chunk_start = chunk[0]["start"]  # Inicio de primera palabra
-                chunk_end = chunk[-1]["end"]     # Final de última palabra
+            # Crear segmentos con timing preciso Y control de silencios
+            for i, chunk in enumerate(word_chunks):
+                chunk_start = chunk[0]["start"]
+                chunk_end = chunk[-1]["end"]
                 chunk_text = " ".join([w["word"] for w in chunk])
+                
+                # CONTROL DE SILENCIOS: No extender subtítulos durante gaps largos
+                if CHUNK_CONFIG["silence_detection"]:
+                    # Verificar si hay gap de silencio después de este chunk
+                    next_chunk_start = None
+                    if i < len(word_chunks) - 1:
+                        next_chunk_start = word_chunks[i + 1][0]["start"]
+                    else:
+                        # Es el último chunk del segmento
+                        next_chunk_start = end_time
+                    
+                    # Si hay un gap grande, no extender el subtítulo
+                    silence_gap = next_chunk_start - chunk_end
+                    if silence_gap > CHUNK_CONFIG["min_silence_gap"]:
+                        # Limitar la extensión del subtítulo
+                        max_extend = min(CHUNK_CONFIG["max_silence_extend"], silence_gap * 0.3)
+                        chunk_end = min(chunk_end + max_extend, next_chunk_start - 0.1)
                 
                 chunked_segments.append({
                     "start": chunk_start,
@@ -231,7 +278,7 @@ def transcribe_with_chunking(video_path):
     srt_path = output_dir / f"{video_name}_chunked.srt"
     json_path = output_dir / f"{video_name}_chunked.json"
     
-    print("🔄 Inicializando modelo Whisper...")
+    print("echo 🔄 Iniciando transcripción ultra-gradual con control de silencios...")
     try:
         # Inicializar modelo faster-whisper
         model = WhisperModel(
@@ -294,7 +341,7 @@ def transcribe_with_chunking(video_path):
         print(f"❌ Error en transcripción: {e}")
         return False
     
-    print("📝 Aplicando chunking ultra-gradual (máximo 3 palabras)...")
+    print("📝 Aplicando chunking ultra-gradual con control de silencios...")
     
     try:
         # Procesar segmentos con chunking usando timing preciso
@@ -331,13 +378,14 @@ def transcribe_with_chunking(video_path):
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(chunked_result, f, ensure_ascii=False, indent=2)
         
-        print(f"✅ CHUNKING ULTRA-GRADUAL COMPLETADO:")
+        print(f"✅ CHUNKING ULTRA-GRADUAL CON CONTROL DE SILENCIOS COMPLETADO:")
         print(f"   📄 SRT: {srt_path}")
         print(f"   📊 JSON: {json_path}")
         print(f"   🧩 Segmentos originales: {len(segments_list)}")
         print(f"   🎯 Segmentos chunked: {len(chunked_segments)}")
         print(f"   📈 Ratio chunking: {len(chunked_segments) / len(segments_list):.1f}x")
         print(f"   📝 Máximo 3 palabras por subtítulo")
+        print(f"   🔇 Control de silencios activado")
         
         return True
         

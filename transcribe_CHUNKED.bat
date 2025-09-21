@@ -22,7 +22,7 @@ if not exist "%~1" (
 )
 
 echo 📹 Archivo: %~1
-echo 🔄 Iniciando transcripción ultra-gradual (máximo 3 palabras)...
+echo 🔄 Iniciando transcripción ultra-gradual con control de silencios...
 echo.
 
 REM Activar entorno virtual y ejecutar
@@ -37,11 +37,12 @@ set "srt_file=%output_dir%%filename%_chunked.srt"
 
 if exist "%srt_file%" (
     echo.
-    echo ✅ ¡CHUNKING ULTRA-GRADUAL COMPLETADO!
+    echo ✅ ¡CHUNKING ULTRA-GRADUAL CON CONTROL DE SILENCIOS COMPLETADO!
     echo 📄 Archivo generado: %srt_file%
     echo.
     echo 🎯 Los subtítulos ahora aparecen máximo 3 palabras
-    echo    a la vez, creando lectura ultra-natural
+    echo    a la vez, respetando silencios naturales
+    echo 🔇 No más subtítulos durante pausas largas
     echo.
 ) else (
     echo.
