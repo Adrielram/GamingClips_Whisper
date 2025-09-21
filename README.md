@@ -50,10 +50,14 @@ GameClipping/
 ├── transcribe_MEJORADO.bat    # 🔥 NUEVO: Ultra-mejorado con correcciones
 ├── transcribe_SYNC_PERFECT.bat # 🎯 NUEVO: Sincronización perfecta
 ├── transcribe_CHUNKED.bat     # 🧩 NUEVO: Segmentación inteligente
+├── transcribe_ENHANCED.bat    # 🎵 NUEVO: Pre-procesamiento de audio avanzado
+├── transcribe_MULTIPASS.bat   # 🎯 NUEVO: Múltiples pasadas adaptativas
 ├── transcribe_precise.py      # Script de transcripción ultra-precisa
 ├── transcribe_mejorado.py     # 🆕 Script con todas las mejoras
 ├── transcribe_sync_perfect.py # 🆕 Script sync-perfect (timestamps originales)
 ├── transcribe_chunked.py      # 🆕 Script chunking inteligente
+├── transcribe_enhanced.py     # 🆕 Script con pre-procesamiento de audio
+├── transcribe_multipass.py    # 🆕 Script con múltiples pasadas
 ├── main.py                    # Script original completo
 ├── MEJORAS_PRECISION.md       # 📖 Guía detallada de mejoras
 ├── requirements.txt           # Dependencias Python
@@ -81,6 +85,8 @@ GameClipping/
 | **MEJORADO** | 🔥 Máxima precisión de palabras | Vocabulario gaming, correcciones ortográficas |
 | **SYNC_PERFECT** | 🎯 Problemas de timing | Preserva timestamps originales de Whisper |
 | **CHUNKED** | 🧩 **Subtítulos muy largos** | **Segmenta texto en fragmentos naturales** |
+| **ENHANCED** | 🎵 **Audio de baja calidad** | **Pre-procesamiento avanzado de audio** |
+| **MULTIPASS** | 🎯 **Máxima cobertura** | **Múltiples pasadas + Merge inteligente** |
 
 ### 🧩 **NUEVO: CHUNKED - Para subtítulos largos**
 
@@ -99,6 +105,51 @@ GameClipping/
 - Los subtítulos duran demasiado tiempo
 - Aparecen muchas palabras de golpe
 - Quieres lectura más natural y gradual
+
+### 🎵 **NUEVO: ENHANCED - Para audio de baja calidad**
+
+**Problema que resuelve:**
+- ❌ Audio con mucho ruido de fondo
+- ❌ Voces que se mezclan con efectos de videojuegos
+- ❌ Grabaciones con mala calidad de micrófono
+- ❌ Música/efectos que interfieren con la transcripción
+
+**Solución:**
+- ✅ **Pre-procesamiento** avanzado con FFmpeg
+- ✅ **Reducción de ruido** adaptativa y filtros FFT
+- ✅ **Mejora de frecuencias** específicas de voz humana
+- ✅ **Compresión dinámica** para separar voz de efectos
+- ✅ **Filtros gaming** especializados (ventiladores, teclado, etc.)
+- ✅ **Normalización** inteligente de volumen
+
+**Úsalo cuando:**
+- El audio tiene mucho ruido de fondo
+- Hay música o efectos muy fuertes
+- El micrófono es de baja calidad
+- Quieres máxima precisión en audio difícil
+
+### 🎯 **NUEVO: MULTIPASS - Para máxima cobertura**
+
+**Problema que resuelve:**
+- ❌ Tiempos muertos que no detecta una sola pasada
+- ❌ Speech que se pierde con configuración conservadora
+- ❌ Susurros o habla muy baja que pasa desapercibida
+- ❌ Necesidad de balance entre precisión y cobertura
+
+**Solución:**
+- ✅ **3 Pasadas adaptativas** con diferentes niveles de agresividad
+- ✅ **Pasada conservadora** para speech claro (alta confianza)
+- ✅ **Pasada agresiva** para cubrir tiempos muertos
+- ✅ **Pasada ultra-agresiva** para detectar susurros
+- ✅ **Merge inteligente** eliminando duplicados y conflictos
+- ✅ **Priorización** por confianza y consistencia
+- ✅ **Relleno de gaps** con segmentos de menor confianza
+
+**Úsalo cuando:**
+- Quieres la máxima cobertura posible
+- Hay partes muy difíciles de detectar
+- Necesitas capturar desde speech claro hasta susurros
+- Quieres la transcripción más completa posible
 
 ---
 
