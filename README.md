@@ -52,6 +52,8 @@ GameClipping/
 ├── transcribe_CHUNKED.bat     # 🧩 NUEVO: Segmentación inteligente
 ├── transcribe_ENHANCED.bat    # 🎵 NUEVO: Pre-procesamiento de audio avanzado
 ├── transcribe_MULTIPASS.bat   # 🎯 NUEVO: Múltiples pasadas adaptativas
+├── tiktok_subtitle_overlay.py # 🎬 NUEVO: Generador de videos TikTok con subtítulos
+├── tiktok_ready.bat           # 📱 NUEVO: Script para TikTok Ready (9:16)
 ├── transcribe_precise.py      # Script de transcripción ultra-precisa
 ├── transcribe_mejorado.py     # 🆕 Script con todas las mejoras
 ├── transcribe_sync_perfect.py # 🆕 Script sync-perfect (timestamps originales)
@@ -326,6 +328,44 @@ Dale, vamos que podemos ganar
 - [ ] Interfaz gráfica (GUI)
 - [ ] Transcripción en tiempo real
 - [ ] Integración con OBS Studio
+- [x] **Generador de videos TikTok con subtítulos** ✅
+- [x] **Conversión automática a formato vertical (9:16)** ✅
+
+---
+
+## 🎬 NUEVO: Generador de Videos TikTok
+
+### **🎯 TikTok Ready - Convierte tus gameplays a formato vertical**
+
+```bash
+# 1. Transcribir tu gameplay
+python transcribe_vad_advanced.py mi_gameplay.mp4
+
+# 2. Generar video TikTok con subtítulos
+tiktok_ready.bat mi_gameplay.mp4 output/mi_gameplay.srt
+
+# ✨ Resultado: Video 9:16 (1080x1920) listo para TikTok
+```
+
+### **Características del Generador TikTok:**
+- ✅ **Formato automático**: Convierte a 9:16 (TikTok/Instagram Reels/YouTube Shorts)
+- ✅ **Subtítulos optimizados**: Estilo TikTok con fuente grande y contorno
+- ✅ **Modos de recorte**: Centro, superior o inferior para videos horizontales
+- ✅ **Resoluciones personalizadas**: 1080x1920, 720x1280, etc.
+- ✅ **Fuente automática**: Tamaño optimizado según resolución
+- ✅ **Compatible**: Con todos los scripts de transcripción del proyecto
+
+### **Uso Ultra-Fácil:**
+```bash
+# Método súper fácil (drag & drop)
+tiktok_ready.bat tu_video.mp4 subtitulos.srt
+
+# Personalización avanzada
+python tiktok_subtitle_overlay.py video.mp4 subs.srt \
+  --tiktok --font-color yellow --crop-mode top
+```
+
+**📖 Documentación completa:** `README_TIKTOK_SUBTITLES.md`
 
 ---
 

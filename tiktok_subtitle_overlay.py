@@ -147,7 +147,9 @@ class TikTokSubtitleGenerator:
                  stroke_color: str = 'black',
                  stroke_width: int = 3,
                  font_family: str = 'Arial-Bold',
-                 background_opacity: float = 0.7):
+                 background_opacity: float = 0.7,
+                 tiktok_format: bool = False,
+                 custom_resolution: Optional[Tuple[int, int]] = None):
         """
         Inicializa el generador con configuración de estilo.
         
@@ -158,6 +160,8 @@ class TikTokSubtitleGenerator:
             stroke_width: Grosor del contorno
             font_family: Familia de fuente
             background_opacity: Opacidad del fondo semi-transparente
+            tiktok_format: Si True, convierte a formato TikTok (9:16, 1080x1920)
+            custom_resolution: Tupla (ancho, alto) para resolución personalizada
         """
         self.font_size = font_size
         self.font_color = font_color
@@ -165,6 +169,8 @@ class TikTokSubtitleGenerator:
         self.stroke_width = stroke_width
         self.font_family = font_family
         self.background_opacity = background_opacity
+        self.tiktok_format = tiktok_format
+        self.custom_resolution = custom_resolution
         
         # Verificar que FFmpeg esté disponible
         try:
@@ -173,18 +179,103 @@ class TikTokSubtitleGenerator:
             print(f"ERROR: FFmpeg no está disponible: {e}")
             sys.exit(1)
     
+    def resize_video_for_tiktok(self, video: VideoFileClip, crop_mode: str = 'center') -> VideoFileClip:
+        """
+        Redimensiona el video para formato TikTok (9:16) o resolución personalizada.
+        
+        Args:
+            video: Clip de video original
+            crop_mode: Modo de recorte ('center', 'top', 'bottom')
+            
+        Returns:
+            VideoFileClip redimensionado
+        """
+        original_w, original_h = video.size
+        
+        if self.custom_resolution:
+            target_w, target_h = self.custom_resolution
+            print(f"Redimensionando a resolución personalizada: {target_w}x{target_h}")
+        elif self.tiktok_format:
+            # Formato TikTok estándar: 9:16 ratio, resolución 1080x1920
+            target_w, target_h = 1080, 1920
+            print(f"Convirtiendo a formato TikTok: {target_w}x{target_h}")
+        else:
+            # Sin cambios
+            return video
+        
+        # Calcular el ratio de aspecto
+        original_ratio = original_w / original_h
+        target_ratio = target_w / target_h
+        
+        if original_ratio > target_ratio:
+            # Video más ancho que el target - recortar los lados
+            new_height = original_h
+            new_width = int(original_h * target_ratio)
+            
+            # Centrar el recorte horizontalmente
+            x_offset = (original_w - new_width) // 2
+            y_offset = 0
+            
+            # Recortar video
+            video_cropped = video.crop(x1=x_offset, y1=y_offset, 
+                                     x2=x_offset + new_width, y2=y_offset + new_height)
+        else:
+            # Video más alto que el target - recortar arriba y abajo
+            new_width = original_w
+            new_height = int(original_w / target_ratio)
+            
+            # Aplicar modo de recorte vertical
+            if crop_mode == 'top':
+                y_offset = 0
+            elif crop_mode == 'bottom':
+                y_offset = original_h - new_height
+            else:  # center
+                y_offset = (original_h - new_height) // 2
+            
+            x_offset = 0
+            
+            # Recortar video
+            video_cropped = video.crop(x1=x_offset, y1=y_offset,
+                                     x2=x_offset + new_width, y2=y_offset + new_height)
+        
+        # Redimensionar al tamaño final
+        video_resized = video_cropped.resize((target_w, target_h))
+        
+        print(f"Video redimensionado: {original_w}x{original_h} → {target_w}x{target_h} (modo: {crop_mode})")
+        return video_resized
+    
+    def calculate_tiktok_font_size(self, video_height: int) -> int:
+        """
+        Calcula el tamaño de fuente óptimo para diferentes resoluciones TikTok.
+        
+        Args:
+            video_height: Altura del video
+            
+        Returns:
+            Tamaño de fuente ajustado
+        """
+        # Tamaños base para diferentes resoluciones TikTok
+        if video_height >= 1920:  # 1080x1920 (Full HD)
+            return max(int(self.font_size * 1.2), 70)
+        elif video_height >= 1280:  # 720x1280 (HD)
+            return max(int(self.font_size * 1.0), 60)
+        elif video_height >= 960:   # 540x960 (SD)
+            return max(int(self.font_size * 0.8), 50)
+        else:  # Resoluciones menores
+            return max(int(self.font_size * 0.7), 40)
+    
     def create_subtitle_clip(self, 
                            subtitle: Subtitle, 
                            video_size: Tuple[int, int]) -> CompositeVideoClip:
         """
-        Crea un clip de texto para un subtítulo al estilo TikTok usando PIL.
+        Crea un clip de texto para un subtítulo al estilo TikTok usando TextClip básico.
         
         Args:
             subtitle: Objeto Subtitle con el texto y timing
             video_size: Tupla (ancho, alto) del video
             
         Returns:
-            CompositeVideoClip configurado con el estilo TikTok
+            Clip configurado con el estilo TikTok
         """
         # Dividir texto largo en múltiples líneas
         words = subtitle.text.split()
@@ -204,103 +295,41 @@ class TikTokSubtitleGenerator:
         
         text = '\n'.join(lines)
         
-        # Usar un método alternativo sin ImageMagick
+        # Usar TextClip básico para evitar problemas con ImageMagick y PIL
         try:
-            from PIL import Image, ImageDraw, ImageFont
-            import tempfile
-            import os
-            
-            # Crear imagen con PIL
-            width, height = video_size[0], int(video_size[1] * 0.3)  # 30% inferior del video
-            img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
-            draw = ImageDraw.Draw(img)
-            
-            # Intentar cargar fuente, usar default si falla
-            try:
-                font = ImageFont.truetype("arial.ttf", self.font_size)
-            except:
-                try:
-                    font = ImageFont.truetype("C:/Windows/Fonts/arial.ttf", self.font_size)
-                except:
-                    font = ImageFont.load_default()
-            
-            # Calcular posición del texto (centrado)
-            bbox = draw.textbbox((0, 0), text, font=font)
-            text_width = bbox[2] - bbox[0]
-            text_height = bbox[3] - bbox[1]
-            
-            x = (width - text_width) // 2
-            y = height - text_height - 20  # 20px desde el bottom
-            
-            # Dibujar contorno (stroke)
-            stroke_width = self.stroke_width
-            stroke_color = self.stroke_color
-            if stroke_color == 'black':
-                stroke_color = (0, 0, 0, 255)
-            elif stroke_color == 'white':
-                stroke_color = (255, 255, 255, 255)
-            
-            # Dibujar el contorno
-            for dx in range(-stroke_width, stroke_width + 1):
-                for dy in range(-stroke_width, stroke_width + 1):
-                    if dx*dx + dy*dy <= stroke_width*stroke_width:
-                        draw.text((x + dx, y + dy), text, font=font, fill=stroke_color)
-            
-            # Dibujar texto principal
-            text_color = self.font_color
-            if text_color == 'white':
-                text_color = (255, 255, 255, 255)
-            elif text_color == 'yellow':
-                text_color = (255, 255, 0, 255)
-            elif text_color == 'black':
-                text_color = (0, 0, 0, 255)
-            else:
-                # Intentar parsear color hex
-                try:
-                    if text_color.startswith('#'):
-                        hex_color = text_color[1:]
-                        text_color = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4)) + (255,)
-                    else:
-                        text_color = (255, 255, 255, 255)  # Default a blanco
-                except:
-                    text_color = (255, 255, 255, 255)
-            
-            draw.text((x, y), text, font=font, fill=text_color)
-            
-            # Guardar imagen temporal
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
-                img.save(tmp_file.name)
-                tmp_path = tmp_file.name
-            
-            # Crear ImageClip en lugar de TextClip
-            from moviepy.editor import ImageClip
-            txt_clip = ImageClip(tmp_path, duration=subtitle.end_time - subtitle.start_time)
-            txt_clip = txt_clip.set_start(subtitle.start_time)
-            
-            # Posicionar en la parte inferior del video (estilo TikTok)
-            txt_clip = txt_clip.set_position(('center', 'bottom'))
-            
-            # Limpiar archivo temporal
-            try:
-                os.unlink(tmp_path)
-            except:
-                pass
-            
-            return txt_clip
-            
-        except ImportError:
-            # Fallback: usar TextClip simple si PIL no está disponible
-            print("ADVERTENCIA: PIL no disponible, usando TextClip básico")
             txt_clip = TextClip(
                 text,
                 fontsize=self.font_size,
                 color=self.font_color,
-                font='Arial',  # Fuente básica
+                font='Arial',
                 method='label'
             ).set_start(subtitle.start_time).set_duration(subtitle.end_time - subtitle.start_time)
             
+            # Posicionar en la parte inferior del video (estilo TikTok)
             txt_clip = txt_clip.set_position(('center', 'bottom'))
+            
             return txt_clip
+            
+        except Exception as e:
+            print(f"ADVERTENCIA: Error creando TextClip ({e}), usando clip básico")
+            # Fallback ultra-básico
+            try:
+                txt_clip = TextClip(
+                    text,
+                    fontsize=max(40, self.font_size),
+                    color='white',
+                    method='label'
+                ).set_start(subtitle.start_time).set_duration(subtitle.end_time - subtitle.start_time)
+                
+                txt_clip = txt_clip.set_position(('center', 'bottom'))
+                return txt_clip
+                
+            except Exception as e2:
+                print(f"ERROR: No se puede crear ningún tipo de clip de texto: {e2}")
+                # Retornar clip vacío
+                from moviepy.editor import ColorClip
+                empty_clip = ColorClip(size=(1, 1), color=(0, 0, 0, 0), duration=0.1)
+                return empty_clip.set_start(subtitle.start_time)
     
     def create_background_clip(self, 
                              subtitle: Subtitle, 
@@ -345,6 +374,7 @@ class TikTokSubtitleGenerator:
                                     video_path: str, 
                                     srt_path: str, 
                                     output_path: str,
+                                    crop_mode: str = 'center',
                                     progress_callback=None) -> bool:
         """
         Genera un video con subtítulos al estilo TikTok.
@@ -361,7 +391,19 @@ class TikTokSubtitleGenerator:
         try:
             print(f"Cargando video: {video_path}")
             video = VideoFileClip(video_path)
+            
+            # Redimensionar para TikTok si está habilitado
+            if self.tiktok_format or self.custom_resolution:
+                video = self.resize_video_for_tiktok(video, crop_mode)
+            
             video_size = video.size
+            
+            # Ajustar tamaño de fuente para TikTok
+            if self.tiktok_format:
+                original_font_size = self.font_size
+                self.font_size = self.calculate_tiktok_font_size(video_size[1])
+                if original_font_size != self.font_size:
+                    print(f"Tamaño de fuente ajustado para TikTok: {original_font_size} → {self.font_size}px")
             
             print(f"Parseando subtítulos: {srt_path}")
             subtitles = SRTParser.parse_srt_file(srt_path)
@@ -453,6 +495,14 @@ def main():
 Ejemplos de uso:
   python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt -o video_con_subs.mp4
   python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt --font-size 80 --stroke-width 4
+  
+Formato TikTok:
+  python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt --tiktok
+  python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt --tiktok --crop-mode top
+  
+Resolución personalizada:
+  python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt --resolution 720x1280
+  python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt --resolution 540x960 --crop-mode bottom
         """
     )
     
@@ -472,8 +522,29 @@ Ejemplos de uso:
                        help='Familia de fuente (por defecto: Arial-Bold)')
     parser.add_argument('--background-opacity', type=float, default=0.0,
                        help='Opacidad del fondo (0.0-1.0, por defecto: 0.0)')
+    parser.add_argument('--tiktok', action='store_true',
+                       help='Convertir a formato TikTok (9:16, 1080x1920)')
+    parser.add_argument('--resolution', 
+                       help='Resolución personalizada (ej: 720x1280)')
+    parser.add_argument('--crop-mode', choices=['center', 'top', 'bottom'], default='center',
+                       help='Modo de recorte cuando se cambia aspect ratio (por defecto: center)')
     
     args = parser.parse_args()
+    
+    # Procesar resolución personalizada
+    custom_resolution = None
+    if args.resolution:
+        try:
+            width, height = map(int, args.resolution.split('x'))
+            custom_resolution = (width, height)
+        except ValueError:
+            print(f"❌ Error: Formato de resolución inválido. Usa formato 'ancho x alto' (ej: 720x1280)")
+            sys.exit(1)
+    
+    # Validar argumentos
+    if args.tiktok and custom_resolution:
+        print("❌ Error: No puedes usar --tiktok y --resolution al mismo tiempo")
+        sys.exit(1)
     
     # Validar archivos de entrada
     if not os.path.exists(args.video):
@@ -500,6 +571,10 @@ Ejemplos de uso:
     print(f"Subtítulos: {args.srt}")
     print(f"Video de salida: {args.output}")
     print(f"Configuración: Fuente {args.font_size}px, Color {args.font_color}")
+    if args.tiktok:
+        print("🎯 Formato: TikTok (9:16, 1080x1920)")
+    elif custom_resolution:
+        print(f"🎯 Resolución personalizada: {custom_resolution[0]}x{custom_resolution[1]}")
     print("=" * 40)
     
     # Crear generador
@@ -509,7 +584,9 @@ Ejemplos de uso:
         stroke_color=args.stroke_color,
         stroke_width=args.stroke_width,
         font_family=args.font_family,
-        background_opacity=args.background_opacity
+        background_opacity=args.background_opacity,
+        tiktok_format=args.tiktok,
+        custom_resolution=custom_resolution
     )
     
     # Generar video
@@ -517,6 +594,7 @@ Ejemplos de uso:
         args.video,
         args.srt,
         args.output,
+        crop_mode=args.crop_mode,
         progress_callback=progress_callback
     )
     

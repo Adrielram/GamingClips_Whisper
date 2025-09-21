@@ -21,6 +21,13 @@ if "%~1"=="" (
     echo   --font-color yellow     - Color del texto
     echo   --stroke-width 4        - Grosor del contorno
     echo   --background-opacity 0.3 - Opacidad del fondo
+    echo   --tiktok                 - Convertir a formato TikTok (9:16)
+    echo   --resolution 720x1280   - Resolución personalizada
+    echo   --crop-mode center      - Modo de recorte (center/top/bottom)
+    echo.
+    echo Ejemplos TikTok:
+    echo   %~nx0 video.mp4 subs.srt --tiktok
+    echo   %~nx0 video.mp4 subs.srt --resolution 720x1280
     echo.
     pause
     exit /b 1

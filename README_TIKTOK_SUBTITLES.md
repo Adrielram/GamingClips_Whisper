@@ -5,6 +5,9 @@ Este componente permite añadir subtítulos al estilo TikTok a cualquier video, 
 ## 🎯 Características
 
 - **Estilo TikTok**: Subtítulos grandes, centrados, con contorno y posicionados en la parte inferior
+- **Formato TikTok Ready**: Conversión automática a 9:16 (1080x1920) para TikTok/Instagram Reels
+- **Resoluciones personalizadas**: Configura cualquier resolución personalizada
+- **Modos de recorte**: Centro, superior o inferior para videos horizontales
 - **Personalizable**: Tamaño de fuente, colores, contorno y fondo ajustables
 - **Automático**: Parsea archivos .srt y sincroniza automáticamente con el video
 - **Múltiples líneas**: Divide automáticamente texto largo en líneas apropiadas
@@ -32,6 +35,35 @@ python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt
 
 # Especificar archivo de salida
 python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt -o video_final.mp4
+```
+
+### 🎯 TikTok Ready (NUEVO)
+
+```bash
+# Convertir automáticamente a formato TikTok (9:16, 1080x1920)
+python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt --tiktok
+
+# Con modo de recorte específico
+python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt --tiktok --crop-mode top
+
+# Script batch especializado para TikTok
+tiktok_ready.bat video.mp4 subtitulos.srt
+```
+
+### 📱 Resoluciones Personalizadas
+
+```bash
+# Instagram Stories (9:16)
+python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt --resolution 1080x1920
+
+# YouTube Shorts (9:16)
+python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt --resolution 1080x1920
+
+# TikTok HD
+python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt --resolution 720x1280
+
+# Resolución personalizada con recorte inferior
+python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt --resolution 540x960 --crop-mode bottom
 ```
 
 ### Uso con Script Batch (Windows)
@@ -71,48 +103,44 @@ python tiktok_subtitle_overlay.py video.mp4 subtitulos.srt \
 | `--stroke-width` | Grosor del contorno | 3 |
 | `--font-family` | Familia de fuente | Arial-Bold |
 | `--background-opacity` | Opacidad del fondo (0.0-1.0) | 0.0 |
+| `--tiktok` | Convertir a formato TikTok (9:16) | False |
+| `--resolution` | Resolución personalizada (ej: 720x1280) | None |
+| `--crop-mode` | Modo de recorte (center/top/bottom) | center |
 
 ## 🎨 Ejemplos de Estilos
 
-### Estilo TikTok Clásico (Por defecto)
+### Estilo TikTok Ready
 ```bash
-python tiktok_subtitle_overlay.py video.mp4 subs.srt
+python tiktok_subtitle_overlay.py video.mp4 subs.srt --tiktok
 ```
-- Texto blanco con contorno negro
-- Fuente Arial-Bold de 60px
-- Sin fondo
+- Formato 9:16 (1080x1920)
+- Fuente optimizada automáticamente
+- Recorte inteligente centrado
+- Listo para TikTok/Instagram Reels
 
-### Estilo Gaming
+### Estilo Gaming para TikTok
 ```bash
 python tiktok_subtitle_overlay.py video.mp4 subs.srt \
-  --font-size 70 \
+  --tiktok \
   --font-color "#00FF00" \
-  --stroke-color black \
-  --stroke-width 4
+  --stroke-width 5 \
+  --crop-mode top
 ```
-- Texto verde brillante
+- Formato TikTok vertical
+- Texto verde brillante gaming
 - Contorno negro más grueso
-- Fuente más grande
+- Recorte desde arriba (para gaming)
 
-### Estilo con Fondo Semi-transparente
+### Estilo YouTube Shorts
 ```bash
 python tiktok_subtitle_overlay.py video.mp4 subs.srt \
-  --font-color white \
-  --background-opacity 0.7
+  --resolution 1080x1920 \
+  --font-size 90 \
+  --background-opacity 0.3
 ```
-- Fondo negro semi-transparente
-- Mejor legibilidad en videos complejos
-
-### Estilo Colorido
-```bash
-python tiktok_subtitle_overlay.py video.mp4 subs.srt \
-  --font-size 80 \
-  --font-color yellow \
-  --stroke-color purple \
-  --stroke-width 5
-```
-- Texto amarillo con contorno púrpura
-- Fuente extra grande
+- Resolución Full HD vertical
+- Fuente extra grande para móviles
+- Fondo semi-transparente para legibilidad
 
 ## 🔧 Integración con el Sistema de Transcripción
 
@@ -122,8 +150,37 @@ Este componente está diseñado para trabajar perfectamente con los archivos .sr
 # 1. Transcribir audio/video
 python transcribe_vad_advanced.py mi_video.mp4
 
-# 2. Generar video con subtítulos
-python tiktok_subtitle_overlay.py mi_video.mp4 output/mi_video.srt
+# 2. Generar video TikTok con subtítulos
+python tiktok_subtitle_overlay.py mi_video.mp4 output/mi_video.srt --tiktok
+
+# 3. O usar el script batch especializado
+tiktok_ready.bat mi_video.mp4 output/mi_video.srt
+```
+
+## 🎯 Modos de Recorte para Videos Horizontales
+
+Cuando conviertes videos horizontales (16:9) a formato vertical (9:16), puedes elegir qué parte mantener:
+
+### Center (Por defecto)
+- Mantiene el centro del video
+- Ideal para gaming donde la acción está centrada
+- Recorta partes iguales de arriba y abajo
+
+### Top
+- Mantiene la parte superior
+- Útil para gameplays donde la info importante está arriba
+- Recorta solo la parte inferior
+
+### Bottom  
+- Mantiene la parte inferior
+- Útil cuando el contenido importante está abajo
+- Recorta solo la parte superior
+
+```bash
+# Ejemplos de modos de recorte
+python tiktok_subtitle_overlay.py video.mp4 subs.srt --tiktok --crop-mode center
+python tiktok_subtitle_overlay.py video.mp4 subs.srt --tiktok --crop-mode top
+python tiktok_subtitle_overlay.py video.mp4 subs.srt --tiktok --crop-mode bottom
 ```
 
 ## 📁 Estructura de Archivos
@@ -132,6 +189,7 @@ python tiktok_subtitle_overlay.py mi_video.mp4 output/mi_video.srt
 GameClipping/
 ├── tiktok_subtitle_overlay.py    # Script principal
 ├── tiktok_subtitles.bat          # Script batch para Windows
+├── tiktok_ready.bat              # 🆕 Script especializado para TikTok
 ├── requirements.txt              # Dependencias actualizadas
 └── output/                       # Directorio de subtítulos .srt
     ├── video1.srt
@@ -193,11 +251,14 @@ pip install moviepy
 # 1. Transcribir un video de gaming
 python transcribe_vad_advanced.py gameplay.mp4 --prompt "gaming, videojuego, acción"
 
-# 2. Generar video con subtítulos TikTok
-python tiktok_subtitle_overlay.py gameplay.mp4 output/gameplay.srt \
-  --font-size 70 --font-color "#00FF00"
+# 2. Generar video TikTok Ready con subtítulos
+tiktok_ready.bat gameplay.mp4 output/gameplay.srt
 
-# 3. El resultado estará en gameplay_con_subtitulos.mp4
+# 3. O personalizar completamente
+python tiktok_subtitle_overlay.py gameplay.mp4 output/gameplay.srt \
+  --tiktok --font-color "#00FF00" --crop-mode top --background-opacity 0.2
+
+# 4. El resultado estará en gameplay_tiktok.mp4 (formato 9:16)
 ```
 
 ## 📊 Formatos Soportados
@@ -213,15 +274,37 @@ python tiktok_subtitle_overlay.py gameplay.mp4 output/gameplay.srt \
 **Videos de salida:**
 - MP4 con codec H.264
 - Audio AAC
-- Misma resolución y framerate que el original
+- Resolución personalizable (TikTok: 1080x1920)
+- Ratio de aspecto optimizado para vertical (9:16)
+- Misma duración que el original
 
 ## 🎬 Consejos para Mejores Resultados
 
 1. **Usa prompts específicos** al transcribir para mayor precisión
 2. **Revisa los subtítulos** antes de generar el video final
-3. **Ajusta el tamaño de fuente** según la resolución del video
-4. **Usa fondos semi-transparentes** para videos con mucho movimiento
-5. **Experimenta con colores** que contrasten bien con tu contenido
+3. **Para TikTok**: Usa `--tiktok` para formato automático optimizado
+4. **Modo de recorte**: Elige `top` para gaming, `center` para contenido general
+5. **Fuente automática**: El formato TikTok ajusta el tamaño automáticamente
+6. **Usa fondos semi-transparentes** para videos con mucho movimiento
+7. **Experimenta con colores** que contrasten bien con tu contenido
+8. **Resoluciones recomendadas**:
+   - TikTok: 1080x1920 (automático con `--tiktok`)
+   - Instagram Reels: 1080x1920
+   - YouTube Shorts: 1080x1920
+   - TikTok básico: 720x1280
+
+### 🎯 Configuraciones Recomendadas por Plataforma
+
+```bash
+# TikTok Premium
+python tiktok_subtitle_overlay.py video.mp4 subs.srt --tiktok --font-size 80
+
+# Instagram Reels
+python tiktok_subtitle_overlay.py video.mp4 subs.srt --resolution 1080x1920 --background-opacity 0.3
+
+# YouTube Shorts
+python tiktok_subtitle_overlay.py video.mp4 subs.srt --resolution 1080x1920 --font-size 85
+```
 
 ---
 
