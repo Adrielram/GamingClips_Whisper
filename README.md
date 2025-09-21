@@ -16,6 +16,17 @@ transcribe_FINAL.bat
 # 2. ¡Espera y listo! Se genera tu_video.srt automáticamente
 ```
 
+### **⭐ NUEVO: Método Ultra-Mejorado**
+```bash
+# Para máxima precisión y corrección de problemas:
+transcribe_MEJORADO.bat
+```
+
+**Mejoras específicas:**
+- 🔤 **Palabras correctas:** Diccionario gaming argentino (Gabriel vs abriel)
+- 🔊 **Tiempos muertos:** VAD agresivo detecta más audio
+- ⏱️ **Sincronización:** Corrección automática de drift temporal
+
 **Características automáticas:**
 - ✅ Modelo `large-v3` (máxima calidad)
 - ✅ Timestamps palabra por palabra  
@@ -30,12 +41,18 @@ transcribe_FINAL.bat
 ```
 GameClipping/
 ├── transcribe_FINAL.bat       # ⭐ SCRIPT PRINCIPAL - Drag & Drop
+├── transcribe_MEJORADO.bat    # 🔥 NUEVO: Ultra-mejorado con correcciones
 ├── transcribe_precise.py      # Script de transcripción ultra-precisa
+├── transcribe_mejorado.py     # 🆕 Script con todas las mejoras
 ├── main.py                    # Script original completo
+├── MEJORAS_PRECISION.md       # 📖 Guía detallada de mejoras
 ├── requirements.txt           # Dependencias Python
 ├── README.md                  # Esta documentación
 ├── venv/                      # Entorno virtual (FUNCIONA)
 ├── tools/                     # Herramientas auxiliares
+│   ├── analizar_transcripcion.py  # 🔍 Analiza calidad de SRT
+│   ├── precise_transcribe.py      # Transcripción avanzada
+│   └── [otras herramientas]
 ├── audio_clean/              # Audio procesado
 ├── output/                   # Archivos generados
 └── examples/                 # Ejemplos y tests
@@ -44,6 +61,15 @@ GameClipping/
 ---
 
 ## 🔧 Métodos Alternativos
+
+### **🔥 Ultra-Mejorado (Para casos problemáticos)**
+```bash
+# Arrastra tu video al script mejorado:
+transcribe_MEJORADO.bat
+
+# O ejecuta manualmente:
+python transcribe_mejorado.py "tu_video.mp4"
+```
 
 ### **Manual con Python**
 ```bash
@@ -202,6 +228,52 @@ Dale, vamos que podemos ganar
 - [ ] Interfaz gráfica (GUI)
 - [ ] Transcripción en tiempo real
 - [ ] Integración con OBS Studio
+
+---
+
+## 🎯 Mejoras de Precisión Implementadas
+
+### **📖 Documento Detallado**
+Ver `MEJORAS_PRECISION.md` para análisis completo de problemas y soluciones.
+
+### **🔤 Problema: Palabras Incorrectas**
+**Ejemplo:** "abriel" en lugar de "Gabriel"
+
+**Soluciones implementadas:**
+- ✅ Diccionario personalizado con nombres gaming argentinos
+- ✅ Corrección ortográfica post-procesamiento
+- ✅ Prompts especializados para gaming
+- ✅ Pre-procesamiento de audio mejorado
+
+### **🔇 Problema: Tiempos Muertos** 
+**Ejemplo:** No se generan subtítulos durante ruidos o voces simultáneas
+
+**Soluciones implementadas:**
+- ✅ VAD (Voice Activity Detection) más agresivo
+- ✅ Umbral de confianza reducido
+- ✅ Separación de fuentes de audio
+- ✅ Detección de speech más corto
+
+### **⏱️ Problema: Desincronización Temporal**
+**Ejemplo:** Subtítulos aparecen 1-2 segundos antes al final del video
+
+**Soluciones implementadas:**
+- ✅ Corrección automática de drift temporal
+- ✅ Sincronización con landmarks de audio
+- ✅ Timestamps de referencia con FFmpeg
+- ✅ Ajuste progresivo de timestamps
+
+### **📊 Herramienta de Análisis**
+```bash
+# Analizar calidad de transcripción existente:
+python tools/analizar_transcripcion.py archivo.srt
+```
+
+**Detecta automáticamente:**
+- 🔍 Palabras sospechosas o mal transcritas
+- 🔍 Huecos temporales largos
+- 🔍 Problemas de sincronización
+- 🔍 Drift temporal acumulativo
 
 ---
 
