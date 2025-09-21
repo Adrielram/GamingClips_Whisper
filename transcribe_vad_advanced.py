@@ -53,6 +53,16 @@ except ImportError:
     print("⚠️ Librosa/soundfile no disponible. Install: pip install librosa soundfile")
 
 @dataclass
+class SimpleTranscriptionSegment:
+    """Segmento simple de transcripción para uso interno"""
+    text: str
+    start_time: float
+    end_time: float
+    confidence: float = 0.8
+    language: str = "es"
+    model_name: str = "whisper"
+
+@dataclass
 class AdvancedTranscriptionConfig:
     """Configuración para transcripción avanzada con VAD"""
     
@@ -403,7 +413,20 @@ class AdvancedTranscriber:
             sf.write(temp_audio_path, audio, sample_rate)
             
             # Ejecutar transcripción multipass
-            results = self.multipass_transcriber.multipass_transcribe(str(temp_audio_path))
+            dict_results = self.multipass_transcriber.multipass_transcribe(str(temp_audio_path))
+            
+            # Convertir diccionarios a objetos SimpleTranscriptionSegment
+            results = []
+            for segment_dict in dict_results:
+                result = SimpleTranscriptionSegment(
+                    text=segment_dict.get("text", "").strip(),
+                    start_time=segment_dict.get("start", 0.0),
+                    end_time=segment_dict.get("end", 0.0),
+                    confidence=segment_dict.get("confidence", 0.8),
+                    language="es",
+                    model_name="multipass"
+                )
+                results.append(result)
             
             return results
             
@@ -412,7 +435,7 @@ class AdvancedTranscriber:
             if temp_audio_path.exists():
                 temp_audio_path.unlink()
     
-    def _simple_transcription(self, audio: np.ndarray, sample_rate: int, context_results: List[GamingContextResult]) -> List[TranscriptionResult]:
+    def _simple_transcription(self, audio: np.ndarray, sample_rate: int, context_results: List[GamingContextResult]) -> List[SimpleTranscriptionSegment]:
         """Transcripción simple usando faster-whisper directamente"""
         
         print("🎯 Ejecutando transcripción simple...")
@@ -432,10 +455,10 @@ class AdvancedTranscriber:
                 # Transcribir
                 segments, info = model.transcribe(str(temp_audio_path), language="es")
                 
-                # Convertir a formato TranscriptionResult
+                # Convertir a formato SimpleTranscriptionSegment
                 results = []
                 for segment in segments:
-                    result = TranscriptionResult(
+                    result = SimpleTranscriptionSegment(
                         text=segment.text.strip(),
                         start_time=segment.start,
                         end_time=segment.end,

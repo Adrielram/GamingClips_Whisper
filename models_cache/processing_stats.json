@@ -1,6 +1,6 @@
 {
   "total_files_processed": 1,
-  "total_processing_time": 7.0496532917022705,
+  "total_processing_time": 41.20475912094116,
   "average_speech_ratio": 0.772406981153707,
   "context_distribution": {
     "exploration": 1

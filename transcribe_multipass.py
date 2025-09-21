@@ -927,6 +927,9 @@ class MultipassTranscriber:
         """
         print("🚀 Iniciando transcripción multipass...")
         
+        # Cargar modelo si no está cargado
+        self.load_model()
+        
         # Ejecutar todas las pasadas (5 en total)
         conservative_segments = transcribe_with_config(self.model, audio_path, CONSERVATIVE_CONFIG, "CONSERVADORA")
         aggressive_segments = transcribe_with_config(self.model, audio_path, AGGRESSIVE_CONFIG, "AGRESIVA") 

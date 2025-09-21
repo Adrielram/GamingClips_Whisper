@@ -6,6 +6,9 @@ whisperx>=3.1.0
 pydub>=0.25.1
 av>=15.1.0
 
+# Video processing and subtitle overlay
+moviepy>=1.0.3
+
 # Optional post-processing
 symspellpy>=6.7.8
 
