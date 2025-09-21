@@ -107,6 +107,50 @@ ULTRA_AGGRESSIVE_CONFIG = {
     }
 }
 
+# PASADA 4: Especializada en palabras cortas y exclamaciones
+MICRO_SPEECH_CONFIG = {
+    **WHISPER_BASE_CONFIG,
+    "beam_size": 3,
+    "best_of": 3,
+    "patience": 0.8,
+    "length_penalty": 0.5,  # Favorece segmentos cortos
+    "repetition_penalty": 0.95,  # Permite más repeticiones
+    "no_repeat_ngram_size": 2,
+    "temperature": [0.0, 0.3, 0.6, 0.9],  # Más exploración
+    "compression_ratio_threshold": 3.0,  # Más permisivo
+    "log_prob_threshold": -1.2,  # Muy permisivo
+    "no_speech_threshold": 0.2,  # Extremadamente agresivo
+    "hallucination_silence_threshold": 3.0,
+    "vad_parameters": {
+        "threshold": 0.2,  # Extremadamente sensible
+        "min_speech_duration_ms": 50,  # Detecta speech muy corto
+        "min_silence_duration_ms": 50,
+        "speech_pad_ms": 250
+    }
+}
+
+# PASADA 5: Especializada en speech superpuesto y ruido
+NOISE_ROBUST_CONFIG = {
+    **WHISPER_BASE_CONFIG,
+    "beam_size": 10,  # Más exploración
+    "best_of": 10,
+    "patience": 3.0,  # Muy paciente
+    "length_penalty": 1.5,  # Favorece segmentos más largos
+    "repetition_penalty": 1.2,  # Evita repeticiones en ruido
+    "no_repeat_ngram_size": 5,
+    "temperature": [0.1, 0.3],  # Temperaturas medias
+    "compression_ratio_threshold": 2.0,  # Más estricto
+    "log_prob_threshold": -0.9,
+    "no_speech_threshold": 0.7,  # Conservador para evitar ruido
+    "hallucination_silence_threshold": 1.0,  # Más estricto
+    "vad_parameters": {
+        "threshold": 0.45,  # Moderado
+        "min_speech_duration_ms": 400,  # Segmentos más largos
+        "min_silence_duration_ms": 300,
+        "speech_pad_ms": 100
+    }
+}
+
 # Configuración de chunking para resultado final
 CHUNK_CONFIG = {
     "max_words": 3,
@@ -371,6 +415,121 @@ def fill_gaps_with_lower_confidence(merged_segments, all_segments, min_gap_durat
     
     return final_segments
 
+def merge_multipass_results_v2(conservative_segments, aggressive_segments, ultra_aggressive_segments,
+                               micro_speech_segments, noise_robust_segments):
+    """Merge inteligente de resultados de 5 pasadas con priorización especializada"""
+    print("🔄 Realizando merge inteligente de 5 pasadas...")
+    
+    # Combinar todos los segmentos
+    all_segments = []
+    all_segments.extend(conservative_segments)
+    all_segments.extend(aggressive_segments)
+    all_segments.extend(ultra_aggressive_segments)
+    all_segments.extend(micro_speech_segments)
+    all_segments.extend(noise_robust_segments)
+    
+    # Ordenar por tiempo de inicio
+    all_segments.sort(key=lambda x: x["start"])
+    
+    print(f"📊 Segmentos totales antes del merge: {len(all_segments)}")
+    print(f"   • Conservadora: {len(conservative_segments)}")
+    print(f"   • Agresiva: {len(aggressive_segments)}")
+    print(f"   • Ultra-agresiva: {len(ultra_aggressive_segments)}")
+    print(f"   • Micro-speech: {len(micro_speech_segments)}")
+    print(f"   • Noise-robust: {len(noise_robust_segments)}")
+    
+    # Detectar superposiciones
+    overlaps = detect_overlaps(all_segments)
+    print(f"⚠️ Detectadas {len(overlaps)} superposiciones")
+    
+    # Resolver conflictos con priorización especializada
+    merged_segments = []
+    used_indices = set()
+    
+    for i, segment in enumerate(all_segments):
+        if i in used_indices:
+            continue
+            
+        # Buscar segmentos superpuestos con este
+        conflicting_segments = [segment]
+        conflicting_indices = [i]
+        
+        for overlap in overlaps:
+            if overlap["seg1_idx"] == i and overlap["seg2_idx"] not in used_indices:
+                conflicting_segments.append(overlap["seg2"])
+                conflicting_indices.append(overlap["seg2_idx"])
+            elif overlap["seg2_idx"] == i and overlap["seg1_idx"] not in used_indices:
+                conflicting_segments.append(overlap["seg1"])
+                conflicting_indices.append(overlap["seg1_idx"])
+        
+        # Elegir el mejor segmento del grupo conflictivo
+        best_segment = choose_best_segment_v2(conflicting_segments)
+        merged_segments.append(best_segment)
+        
+        # Marcar todos los índices como usados
+        used_indices.update(conflicting_indices)
+    
+    # Agregar segmentos sin conflictos
+    for i, segment in enumerate(all_segments):
+        if i not in used_indices:
+            merged_segments.append(segment)
+    
+    # Ordenar resultado final
+    merged_segments.sort(key=lambda x: x["start"])
+    
+    print(f"✅ Merge completado: {len(merged_segments)} segmentos finales")
+    return merged_segments
+
+def choose_best_segment_v2(conflicting_segments):
+    """Elige el mejor segmento de un grupo conflictivo con 5 pasadas"""
+    # Nueva priorización especializada:
+    # 1. Conservadora con alta confianza (>0.8)
+    # 2. Noise-robust para speech largo y claro (>0.7)
+    # 3. Agresiva con confianza decente (>0.6)
+    # 4. Micro-speech para segmentos muy cortos (<1s) con confianza >0.5
+    # 5. Ultra-agresiva como último recurso
+    
+    conservative = [s for s in conflicting_segments if s["pass_source"] == "CONSERVADORA"]
+    aggressive = [s for s in conflicting_segments if s["pass_source"] == "AGRESIVA"]
+    ultra_aggressive = [s for s in conflicting_segments if s["pass_source"] == "ULTRA-AGRESIVA"]
+    micro_speech = [s for s in conflicting_segments if s["pass_source"] == "MICRO-SPEECH"]
+    noise_robust = [s for s in conflicting_segments if s["pass_source"] == "NOISE-ROBUST"]
+    
+    # Prioridad 1: Conservadora con alta confianza
+    if conservative:
+        best_conservative = max(conservative, key=lambda x: x["confidence"])
+        if best_conservative["confidence"] > 0.8:
+            return best_conservative
+    
+    # Prioridad 2: Noise-robust para speech largo y claro
+    if noise_robust:
+        best_noise_robust = max(noise_robust, key=lambda x: x["confidence"])
+        duration = best_noise_robust["end"] - best_noise_robust["start"]
+        if best_noise_robust["confidence"] > 0.7 and duration > 1.0:
+            return best_noise_robust
+    
+    # Prioridad 3: Agresiva con confianza decente
+    if aggressive:
+        best_aggressive = max(aggressive, key=lambda x: x["confidence"])
+        if best_aggressive["confidence"] > 0.6:
+            return best_aggressive
+    
+    # Prioridad 4: Micro-speech para segmentos muy cortos
+    if micro_speech:
+        best_micro = max(micro_speech, key=lambda x: x["confidence"])
+        duration = best_micro["end"] - best_micro["start"]
+        if best_micro["confidence"] > 0.5 and duration < 1.0:
+            return best_micro
+    
+    # Prioridad 5: Ultra-agresiva como último recurso
+    if ultra_aggressive:
+        best_ultra = max(ultra_aggressive, key=lambda x: x["confidence"])
+        if best_ultra["confidence"] > 0.4:
+            return best_ultra
+    
+    # Fallback: el de mayor confianza general
+    return max(conflicting_segments, key=lambda x: x["confidence"])
+
 def split_text_intelligently(text, max_words=3):
     """Divide texto inteligentemente por palabras"""
     words = text.split()
@@ -461,7 +620,7 @@ def process_segments_with_precise_timing(segments):
 def transcribe_multipass(video_path):
     """Transcribe video con múltiples pasadas adaptativas"""
     print("🎯 INICIANDO TRANSCRIPCIÓN MULTIPASS ADAPTATIVA")
-    print("   📝 3 Pasadas + Merge inteligente + Chunking ultra-gradual")
+    print("   📝 5 Pasadas + Merge inteligente + Chunking ultra-gradual")
     print(f"📹 Video: {video_path}")
     
     # Configurar rutas
@@ -497,15 +656,27 @@ def transcribe_multipass(video_path):
             model, video_path, ULTRA_AGGRESSIVE_CONFIG, "ULTRA-AGRESIVA"
         )
         
+        # PASADA 4: Micro-speech
+        micro_speech_segments = transcribe_with_config(
+            model, video_path, MICRO_SPEECH_CONFIG, "MICRO-SPEECH"
+        )
+        
+        # PASADA 5: Noise-robust
+        noise_robust_segments = transcribe_with_config(
+            model, video_path, NOISE_ROBUST_CONFIG, "NOISE-ROBUST"
+        )
+        
         print("=" * 50)
         
         # Merge inteligente de resultados
-        merged_segments = merge_multipass_results(
-            conservative_segments, aggressive_segments, ultra_aggressive_segments
+        merged_segments = merge_multipass_results_v2(
+            conservative_segments, aggressive_segments, ultra_aggressive_segments,
+            micro_speech_segments, noise_robust_segments
         )
         
         # Rellenar gaps con segmentos de menor confianza
-        all_segments = conservative_segments + aggressive_segments + ultra_aggressive_segments
+        all_segments = (conservative_segments + aggressive_segments + ultra_aggressive_segments + 
+                       micro_speech_segments + noise_robust_segments)
         final_segments = fill_gaps_with_lower_confidence(merged_segments, all_segments)
         
         print(f"✅ Multipass completado: {len(final_segments)} segmentos finales")
@@ -553,6 +724,8 @@ def transcribe_multipass(video_path):
                 "conservative": CONSERVATIVE_CONFIG,
                 "aggressive": AGGRESSIVE_CONFIG,
                 "ultra_aggressive": ULTRA_AGGRESSIVE_CONFIG,
+                "micro_speech": MICRO_SPEECH_CONFIG,
+                "noise_robust": NOISE_ROBUST_CONFIG,
                 "chunking": CHUNK_CONFIG
             },
             "stats": {

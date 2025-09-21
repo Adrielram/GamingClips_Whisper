@@ -81,12 +81,12 @@ GameClipping/
 
 | Modo | Uso Recomendado | Fortalezas |
 |------|----------------|------------|
-| **FINAL** | ⭐ Uso general diario | Rápido, confiable, funciona bien |
-| **MEJORADO** | 🔥 Máxima precisión de palabras | Vocabulario gaming, correcciones ortográficas |
-| **SYNC_PERFECT** | 🎯 Problemas de timing | Preserva timestamps originales de Whisper |
-| **CHUNKED** | 🧩 **Subtítulos muy largos** | **Segmenta texto en fragmentos naturales** |
+| **MULTIPASS** | ⭐⭐⭐ **MEJOR OPCIÓN** | **5 pasadas especializadas + Máxima cobertura** |
+| **CHUNKED** | 🧩 **Subtítulos graduales** | **Segmenta en 3 palabras máximo** |
 | **ENHANCED** | 🎵 **Audio de baja calidad** | **Pre-procesamiento avanzado de audio** |
-| **MULTIPASS** | 🎯 **Máxima cobertura** | **Múltiples pasadas + Merge inteligente** |
+| **FINAL** | 🔄 Uso general rápido | Rápido, confiable, funciona bien |
+| **MEJORADO** | 🔥 Precisión de palabras | Vocabulario gaming, correcciones ortográficas |
+| **SYNC_PERFECT** | 🎯 Problemas de timing | Preserva timestamps originales de Whisper |
 
 ### 🧩 **NUEVO: CHUNKED - Para subtítulos largos**
 
@@ -128,28 +128,33 @@ GameClipping/
 - El micrófono es de baja calidad
 - Quieres máxima precisión en audio difícil
 
-### 🎯 **NUEVO: MULTIPASS - Para máxima cobertura**
+### 🎯 **NUEVO: MULTIPASS - Para máxima cobertura (⭐ RECOMENDADO ⭐)**
 
 **Problema que resuelve:**
 - ❌ Tiempos muertos que no detecta una sola pasada
 - ❌ Speech que se pierde con configuración conservadora
 - ❌ Susurros o habla muy baja que pasa desapercibida
+- ❌ Exclamaciones cortas que se pierden
+- ❌ Speech en ambientes ruidosos mal detectado
 - ❌ Necesidad de balance entre precisión y cobertura
 
-**Solución:**
-- ✅ **3 Pasadas adaptativas** con diferentes niveles de agresividad
-- ✅ **Pasada conservadora** para speech claro (alta confianza)
-- ✅ **Pasada agresiva** para cubrir tiempos muertos
-- ✅ **Pasada ultra-agresiva** para detectar susurros
-- ✅ **Merge inteligente** eliminando duplicados y conflictos
-- ✅ **Priorización** por confianza y consistencia
+**Solución NUEVA - 5 Pasadas Especializadas:**
+- ✅ **🟢 CONSERVADORA**: Speech claro y seguro (alta confianza >0.8)
+- ✅ **🟡 AGRESIVA**: Detecta speech ambiguo y dudoso (confianza >0.6)
+- ✅ **🔴 ULTRA-AGRESIVA**: Captura susurros y speech muy débil (confianza >0.4)
+- ✅ **🔵 MICRO-SPEECH**: Especializada en exclamaciones y palabras cortas (<1s)
+- ✅ **🟣 NOISE-ROBUST**: Speech en ambientes ruidosos (segmentos largos >1s)
+- ✅ **Merge inteligente** con priorización especializada
+- ✅ **Chunking ultra-gradual** (máximo 3 palabras por subtitle)
 - ✅ **Relleno de gaps** con segmentos de menor confianza
+- ✅ **Detección de silencios** para evitar subtítulos colgados
 
 **Úsalo cuando:**
-- Quieres la máxima cobertura posible
-- Hay partes muy difíciles de detectar
-- Necesitas capturar desde speech claro hasta susurros
-- Quieres la transcripción más completa posible
+- Quieres la transcripción MÁS COMPLETA posible
+- Hay partes muy difíciles de detectar (susurros, exclamaciones)
+- Necesitas capturar desde speech claro hasta ruido de fondo
+- Quieres la mejor relación precisión/cobertura
+- **ES EL MODO MÁS AVANZADO Y RECOMENDADO**
 
 ---
 

@@ -1,8 +1,15 @@
 @echo off
 echo ================================================================
-echo    🎯 TRANSCRIPTOR MULTIPASS ADAPTATIVO
-echo    Múltiples pasadas + Merge inteligente + Ultra-precisión
+echo    🎯 TRANSCRIPTOR MULTIPASS 5-PASADAS ADAPTATIVO
+echo    5 Pasadas especializadas + Merge inteligente + Ultra-precisión
 echo ================================================================
+echo.
+echo 🔄 Pasadas incluidas:
+echo   • CONSERVADORA: Speech claro y seguro
+echo   • AGRESIVA: Detecta más speech ambiguo
+echo   • ULTRA-AGRESIVA: Captura susurros y speech débil
+echo   • MICRO-SPEECH: Exclamaciones y palabras cortas
+echo   • NOISE-ROBUST: Speech en ambientes ruidosos
 echo.
 
 REM Verificar si se pasó un archivo
