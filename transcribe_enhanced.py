@@ -32,8 +32,8 @@ import numpy as np
 WHISPER_CONFIG = {
     "model": "large-v3",
     "language": "es",
-    "device": "cuda",
-    "compute_type": "float16",
+    "device": "cpu",
+    "compute_type": "int8",
     "beam_size": 5,
     "best_of": 5,
     "patience": 1.5,

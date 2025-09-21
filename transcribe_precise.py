@@ -44,10 +44,10 @@ def main():
     video_file = Path(video_path)
     output_path = video_file.with_suffix('.srt')
     
-    print("🎯 TRANSCRIPCIÓN ULTRA-PRECISA")
+    print("[TRANSCRIPCION ULTRA-PRECISA]")
     print("=" * 60)
-    print(f"📹 Video: {video_path}")
-    print(f"📝 Salida: {output_path}")
+    print(f"Video: {video_path}")
+    print(f"Salida: {output_path}")
     print()
     print("🚀 Técnicas aplicadas:")
     print("    • Word-level timestamps")
@@ -65,7 +65,7 @@ def main():
         video_path,
         str(output_path),
         "--model-size", "large-v3",
-        "--device", "cuda",
+        "--device", "cpu",
         "--word-level",
         "--max-words-per-line", "6",  # Menos palabras = mejor sincronización
         "--max-duration", "2.5"      # Duración más corta = más preciso
@@ -98,7 +98,7 @@ def main():
         print("🔄 Intentando método de respaldo...")
         
         # Método de respaldo con transcripción normal mejorada
-        fallback_script = script_dir / "transcribe.py"
+        fallback_script = script_dir / "main.py"
         fallback_cmd = [sys.executable, str(fallback_script), video_path]
         
         try:

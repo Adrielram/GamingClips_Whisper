@@ -30,8 +30,8 @@ from faster_whisper import WhisperModel
 WHISPER_CONFIG = {
     "model": "large-v3",
     "language": "es",
-    "device": "cuda",
-    "compute_type": "float16",
+    "device": "cpu",
+    "compute_type": "int8",
     "beam_size": 5,
     "best_of": 5,
     "patience": 1.5,
@@ -269,8 +269,8 @@ def process_segments_with_precise_timing(segments):
 def transcribe_with_chunking(video_path):
     """Transcribe video con segmentación inteligente"""
     print("🎯 INICIANDO TRANSCRIPCIÓN CON CHUNKING ULTRA-GRADUAL")
-    print("   📝 Máximo 3 palabras por subtítulo")
-    print(f"📹 Video: {video_path}")
+    print("   Maximo 3 palabras por subtitulo")
+    print(f"Video: {video_path}")
     
     # Configurar rutas
     video_name = Path(video_path).stem
@@ -341,7 +341,7 @@ def transcribe_with_chunking(video_path):
         print(f"❌ Error en transcripción: {e}")
         return False
     
-    print("📝 Aplicando chunking ultra-gradual con control de silencios...")
+    print("Aplicando chunking ultra-gradual con control de silencios...")
     
     try:
         # Procesar segmentos con chunking usando timing preciso
@@ -384,7 +384,7 @@ def transcribe_with_chunking(video_path):
         print(f"   🧩 Segmentos originales: {len(segments_list)}")
         print(f"   🎯 Segmentos chunked: {len(chunked_segments)}")
         print(f"   📈 Ratio chunking: {len(chunked_segments) / len(segments_list):.1f}x")
-        print(f"   📝 Máximo 3 palabras por subtítulo")
+        print(f"   Maximo 3 palabras por subtitulo")
         print(f"   🔇 Control de silencios activado")
         
         return True
@@ -405,8 +405,8 @@ def main():
         sys.exit(1)
     
     print("=" * 60)
-    print("🎯 TRANSCRIPTOR CON CHUNKING ULTRA-GRADUAL")
-    print("   Máximo 3 palabras por subtítulo - Lectura ultra-fluida")
+    print("[TRANSCRIPTOR CON CHUNKING ULTRA-GRADUAL]")
+    print("   Maximo 3 palabras por subtitulo - Lectura ultra-fluida")
     print("=" * 60)
     
     success = transcribe_with_chunking(video_path)

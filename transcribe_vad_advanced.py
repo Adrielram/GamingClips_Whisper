@@ -77,8 +77,8 @@ class AdvancedTranscriptionConfig:
     
     # Configuración Whisper
     whisper_model: str = "large-v3"
-    device: str = "cuda"
-    compute_type: str = "float16"
+    device: str = "cpu"
+    compute_type: str = "int8"
     language: str = "es"
     
     # Configuración contextual

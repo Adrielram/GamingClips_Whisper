@@ -34,8 +34,8 @@ from collections import defaultdict
 WHISPER_BASE_CONFIG = {
     "model": "large-v3",
     "language": "es",
-    "device": "cuda",
-    "compute_type": "float16",
+    "device": "cpu",
+    "compute_type": "int8",
     "initial_prompt": """Esto es una conversación en español argentino sobre videojuegos. Nombres comunes: Gabriel, Adriel, Estani, wilo, corcho, ruben, erizo. Expresiones típicas: "dale", "bueno", "che", "boludo", "posta", "zafar", "hinchar", "joder".""",
     "word_timestamps": True,
     "condition_on_previous_text": True
@@ -174,8 +174,8 @@ class MultipassConfig:
     
     def __init__(self, 
                  model_name="large-v3", 
-                 device="cuda", 
-                 compute_type="float16",
+                 device="cpu", 
+                 compute_type="int8",
                  passes=["conservative", "aggressive", "ultra_aggressive"]):
         self.model_name = model_name
         self.device = device
@@ -683,8 +683,8 @@ def process_segments_with_precise_timing(segments):
 def transcribe_multipass(video_path):
     """Transcribe video con múltiples pasadas adaptativas"""
     print("🎯 INICIANDO TRANSCRIPCIÓN MULTIPASS ADAPTATIVA")
-    print("   📝 5 Pasadas + Merge inteligente + Chunking ultra-gradual")
-    print(f"📹 Video: {video_path}")
+    print("   5 Pasadas + Merge inteligente + Chunking ultra-gradual")
+    print(f"Video: {video_path}")
     
     # Configurar rutas
     video_name = Path(video_path).stem
@@ -748,7 +748,7 @@ def transcribe_multipass(video_path):
         print(f"❌ Error en transcripción multipass: {e}")
         return False
     
-    print("📝 Aplicando chunking ultra-gradual...")
+    print("Aplicando chunking ultra-gradual...")
     
     try:
         # Procesar con chunking
@@ -809,7 +809,7 @@ def transcribe_multipass(video_path):
         print(f"   🎯 Segmentos finales: {len(final_segments)}")
         print(f"   🧩 Segmentos chunked: {len(chunked_segments)}")
         print(f"   📈 Ratio chunking: {len(chunked_segments) / len(final_segments):.1f}x")
-        print(f"   📝 Máximo 3 palabras por subtítulo")
+        print(f"   Maximo 3 palabras por subtitulo")
         
         # Mostrar contribución por pasada
         print(f"   📊 Contribución por pasada:")
@@ -835,7 +835,7 @@ def main():
         sys.exit(1)
     
     print("=" * 60)
-    print("🎯 TRANSCRIPTOR MULTIPASS ADAPTATIVO")
+    print("[TRANSCRIPTOR MULTIPASS ADAPTATIVO]")
     print("   3 Pasadas + Merge inteligente + Chunking ultra-gradual")
     print("=" * 60)
     
@@ -844,7 +844,7 @@ def main():
     if success:
         print("🎉 ¡TRANSCRIPCIÓN MULTIPASS EXITOSA!")
         print("🎯 Máxima cobertura con múltiples estrategias")
-        print("📝 Subtítulos optimizados de 3 palabras")
+        print("Subtitulos optimizados de 3 palabras")
         print("🧠 Merge inteligente aplicado")
     else:
         print("💥 Error en la transcripción multipass")
@@ -855,7 +855,7 @@ class MultipassTranscriber:
     Clase para transcripción multipass compatible con sistema avanzado
     """
     
-    def __init__(self, model_name="large-v3", device="cuda", compute_type="float16"):
+    def __init__(self, model_name="large-v3", device="cpu", compute_type="int8"):
         """Inicializar transcriptor multipass"""
         self.model_name = model_name
         self.device = device

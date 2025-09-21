@@ -166,8 +166,8 @@ def transcribe_with_improvements(video_path, output_path):
     # 3. Configurar modelo
     print("🧠 Cargando modelo con configuración optimizada...")
     try:
-        model = WhisperModel("large-v3", device="cuda", compute_type="float16")
-        device_info = "GPU (CUDA)"
+        model = WhisperModel("large-v3", device="cpu", compute_type="int8")
+        device_info = "CPU"
     except Exception:
         model = WhisperModel("large-v3", device="cpu", compute_type="int8")  
         device_info = "CPU"
@@ -312,10 +312,10 @@ def main():
     base_path = Path(video_path)
     output_path = base_path.with_suffix('.srt')
     
-    print("🎯 TRANSCRIPCIÓN ULTRA-MEJORADA")
+    print("[TRANSCRIPCION ULTRA-MEJORADA]")
     print("=" * 50)
-    print(f"📹 Video: {Path(video_path).name}")
-    print(f"📝 Salida: {output_path.name}")
+    print(f"Video: {Path(video_path).name}")
+    print(f"Salida: {output_path.name}")
     print()
     print("🚀 Mejoras aplicadas:")
     print("    ✅ Diccionario gaming argentino")
@@ -331,10 +331,10 @@ def main():
         elapsed = time.time() - start_time
         print(f"\n✅ ¡TRANSCRIPCIÓN MEJORADA COMPLETADA!")
         print(f"⏱️ Tiempo: {elapsed:.1f}s")
-        print(f"📝 Archivo: {output_path}")
+        print(f"Archivo: {output_path}")
         print()
         print("🎯 Mejoras implementadas:")
-        print("    📝 Palabras más precisas")
+        print("    Palabras mas precisas")
         print("    🔊 Mejor detección en ruidos")
         print("    ⏱️ Sincronización corregida")
     else:
