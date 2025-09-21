@@ -22,10 +22,16 @@ transcribe_FINAL.bat
 transcribe_MEJORADO.bat
 ```
 
+### **🎯 NUEVO: Sync-Perfect (para problemas de sincronización)**
+```bash
+# Si los subtítulos aparecen antes/después del audio:
+transcribe_SYNC_PERFECT.bat
+```
+
 **Mejoras específicas:**
 - 🔤 **Palabras correctas:** Diccionario gaming argentino (Gabriel vs abriel)
 - 🔊 **Tiempos muertos:** VAD agresivo detecta más audio
-- ⏱️ **Sincronización:** Corrección automática de drift temporal
+- ⏱️ **Sincronización:** SYNC-PERFECT mantiene timestamps originales de Whisper
 
 **Características automáticas:**
 - ✅ Modelo `large-v3` (máxima calidad)
@@ -42,8 +48,12 @@ transcribe_MEJORADO.bat
 GameClipping/
 ├── transcribe_FINAL.bat       # ⭐ SCRIPT PRINCIPAL - Drag & Drop
 ├── transcribe_MEJORADO.bat    # 🔥 NUEVO: Ultra-mejorado con correcciones
+├── transcribe_SYNC_PERFECT.bat # 🎯 NUEVO: Sincronización perfecta
+├── transcribe_CHUNKED.bat     # 🧩 NUEVO: Segmentación inteligente
 ├── transcribe_precise.py      # Script de transcripción ultra-precisa
 ├── transcribe_mejorado.py     # 🆕 Script con todas las mejoras
+├── transcribe_sync_perfect.py # 🆕 Script sync-perfect (timestamps originales)
+├── transcribe_chunked.py      # 🆕 Script chunking inteligente
 ├── main.py                    # Script original completo
 ├── MEJORAS_PRECISION.md       # 📖 Guía detallada de mejoras
 ├── requirements.txt           # Dependencias Python
@@ -51,6 +61,7 @@ GameClipping/
 ├── venv/                      # Entorno virtual (FUNCIONA)
 ├── tools/                     # Herramientas auxiliares
 │   ├── analizar_transcripcion.py  # 🔍 Analiza calidad de SRT
+│   ├── analizar_sync.py           # 🎯 Analiza problemas de sincronización
 │   ├── precise_transcribe.py      # Transcripción avanzada
 │   └── [otras herramientas]
 ├── audio_clean/              # Audio procesado
@@ -60,7 +71,38 @@ GameClipping/
 
 ---
 
-## 🔧 Métodos Alternativos
+## � MODOS DE TRANSCRIPCIÓN
+
+### 📊 ¿Cuál usar?
+
+| Modo | Uso Recomendado | Fortalezas |
+|------|----------------|------------|
+| **FINAL** | ⭐ Uso general diario | Rápido, confiable, funciona bien |
+| **MEJORADO** | 🔥 Máxima precisión de palabras | Vocabulario gaming, correcciones ortográficas |
+| **SYNC_PERFECT** | 🎯 Problemas de timing | Preserva timestamps originales de Whisper |
+| **CHUNKED** | 🧩 **Subtítulos muy largos** | **Segmenta texto en fragmentos naturales** |
+
+### 🧩 **NUEVO: CHUNKED - Para subtítulos largos**
+
+**Problema que resuelve:**
+- ❌ Subtítulos que muestran muchas palabras juntas por mucho tiempo
+- ❌ Texto que no aparece gradualmente sincronizado con el audio
+- ❌ Fragmentos muy largos difíciles de leer
+
+**Solución:**
+- ✅ **Segmenta** subtítulos largos en fragmentos de 40-45 caracteres
+- ✅ **Distribuye** palabras a lo largo del tiempo proporcionalmente  
+- ✅ **Respeta** pausas naturales y puntuación
+- ✅ **Mantiene** la precisión de palabras ya lograda
+
+**Úsalo cuando:**
+- Los subtítulos duran demasiado tiempo
+- Aparecen muchas palabras de golpe
+- Quieres lectura más natural y gradual
+
+---
+
+## �🔧 Métodos Alternativos
 
 ### **🔥 Ultra-Mejorado (Para casos problemáticos)**
 ```bash
