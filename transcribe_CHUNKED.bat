@@ -1,7 +1,7 @@
 @echo off
 echo ================================================================
-echo    🎯 TRANSCRIPTOR CON CHUNKING INTELIGENTE
-echo    Segmenta subtítulos para mostrar palabras gradualmente
+echo    🎯 TRANSCRIPTOR ULTRA-GRADUAL (MAX 3 PALABRAS)
+echo    Subtítulos que aparecen palabra por palabra naturalmente
 echo ================================================================
 echo.
 
@@ -22,7 +22,7 @@ if not exist "%~1" (
 )
 
 echo 📹 Archivo: %~1
-echo 🔄 Iniciando transcripción con chunking...
+echo 🔄 Iniciando transcripción ultra-gradual (máximo 3 palabras)...
 echo.
 
 REM Activar entorno virtual y ejecutar
@@ -37,11 +37,11 @@ set "srt_file=%output_dir%%filename%_chunked.srt"
 
 if exist "%srt_file%" (
     echo.
-    echo ✅ ¡CHUNKING COMPLETADO!
+    echo ✅ ¡CHUNKING ULTRA-GRADUAL COMPLETADO!
     echo 📄 Archivo generado: %srt_file%
     echo.
-    echo 🎯 Los subtítulos ahora se muestran gradualmente
-    echo    en fragmentos de 40-45 caracteres máximo
+    echo 🎯 Los subtítulos ahora aparecen máximo 3 palabras
+    echo    a la vez, creando lectura ultra-natural
     echo.
 ) else (
     echo.

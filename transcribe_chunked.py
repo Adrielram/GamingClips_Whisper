@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-TRANSCRIPCIÓN CON SEGMENTACIÓN INTELIGENTE
-==========================================
+TRANSCRIPCIÓN CON SEGMENTACIÓN ULTRA-GRADUAL
+============================================
 
-Soluciona el problema de subtítulos que muestran muchas palabras juntas
-por mucho tiempo. Divide los subtítulos en fragmentos naturales que
-aparecen gradualmente sincronizados con el audio.
+Soluciona el problema de subtítulos largos mostrando máximo 3 palabras
+a la vez, creando una experiencia de lectura ultra-gradual y natural
+perfectamente sincronizada con el audio.
 
 Características:
+- Máximo 3 palabras por subtítulo
 - Segmentación inteligente por pausas naturales
-- Máximo 40-50 caracteres por subtítulo
 - Distribución temporal proporcional
 - Mantiene precisión de palabras lograda
-- Chunks basados en puntuación y ritmo del habla
+- Lectura ultra-fluida y natural
 
 Uso: python transcribe_chunked.py video.mp4
 """
@@ -59,13 +59,15 @@ VAD_CONFIG = {
 
 # Configuración de chunking
 CHUNK_CONFIG = {
-    "max_chars": 45,  # Máximo caracteres por subtítulo
-    "min_chars": 15,  # Mínimo para evitar fragmentos muy cortos
-    "max_duration": 4.0,  # Máximo segundos por subtítulo
-    "min_duration": 0.8,  # Mínimo duración
+    "max_words": 3,  # Máximo 3 palabras por subtítulo
+    "max_chars": 35,  # Máximo caracteres (reducido para 3 palabras)
+    "min_chars": 5,   # Mínimo para evitar fragmentos muy cortos
+    "max_duration": 2.5,  # Máximo segundos por subtítulo (reducido)
+    "min_duration": 0.8,  # Mínimo duración (aumentado para sync)
     "natural_breaks": ['.', '!', '?', ',', ';', ':', ' y ', ' o ', ' pero ', ' aunque '],
     "prefer_breaks": ['.', '!', '?'],  # Preferir estos para cortar
-    "word_distribution": True  # Distribuir palabras temporalmente
+    "word_distribution": True,  # Distribuir palabras temporalmente
+    "sync_conservative": True   # Modo conservador para mantener sincronización
 }
 
 def format_timestamp(seconds):
@@ -78,53 +80,48 @@ def format_timestamp(seconds):
     milliseconds = int((td.total_seconds() % 1) * 1000)
     return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds:03d}"
 
-def split_text_intelligently(text, max_chars=45):
+def split_text_intelligently(text, max_words=3):
     """
     Divide texto de forma inteligente considerando:
-    - Longitud máxima
+    - Máximo 3 palabras por fragmento
     - Puntuación natural
     - Palabras completas
     - Flujo natural del habla
     """
-    if len(text) <= max_chars:
+    words = text.split()
+    if len(words) <= max_words:
         return [text]
     
     chunks = []
-    current_chunk = ""
-    words = text.split()
+    current_chunk_words = []
     
     for word in words:
-        # Probar agregar la palabra
-        test_chunk = current_chunk + (" " if current_chunk else "") + word
+        current_chunk_words.append(word)
         
-        # Si excede el límite
-        if len(test_chunk) > max_chars:
-            # Si tenemos chunk actual, guardarlo
-            if current_chunk:
-                chunks.append(current_chunk.strip())
-                current_chunk = word
-            else:
-                # Palabra muy larga, forzar división
-                chunks.append(word)
-                current_chunk = ""
-        else:
-            current_chunk = test_chunk
-            
-            # Verificar si hay puntuación natural para cortar
-            if any(punct in word for punct in CHUNK_CONFIG["prefer_breaks"]):
-                if len(current_chunk) >= CHUNK_CONFIG["min_chars"]:
-                    chunks.append(current_chunk.strip())
-                    current_chunk = ""
+        # Si llegamos al máximo de palabras
+        if len(current_chunk_words) >= max_words:
+            chunk_text = " ".join(current_chunk_words)
+            chunks.append(chunk_text)
+            current_chunk_words = []
+        
+        # O si encontramos puntuación natural para cortar
+        elif any(punct in word for punct in CHUNK_CONFIG["prefer_breaks"]):
+            if len(current_chunk_words) >= 1:  # Al menos 1 palabra
+                chunk_text = " ".join(current_chunk_words)
+                chunks.append(chunk_text)
+                current_chunk_words = []
     
     # Agregar último chunk si existe
-    if current_chunk.strip():
-        chunks.append(current_chunk.strip())
+    if current_chunk_words:
+        chunk_text = " ".join(current_chunk_words)
+        chunks.append(chunk_text)
     
     return chunks
 
 def distribute_chunks_temporally(chunks, start_time, end_time):
     """
-    Distribuye chunks de texto a lo largo del tiempo de forma proporcional
+    Distribuye chunks de texto manteniendo sincronización perfecta
+    Los chunks aparecen gradualmente pero respetando el timing original
     """
     if not chunks:
         return []
@@ -132,40 +129,47 @@ def distribute_chunks_temporally(chunks, start_time, end_time):
     total_duration = end_time - start_time
     segments = []
     
-    # Calcular duración por chunk basándose en longitud de texto
-    total_chars = sum(len(chunk) for chunk in chunks)
+    # Para mantener sincronización, distribuir uniformemente
+    # pero con overlap para que no aparezcan antes de tiempo
+    chunk_duration = total_duration / len(chunks)
+    
+    # Asegurar duración mínima y máxima
+    chunk_duration = max(CHUNK_CONFIG["min_duration"], 
+                        min(CHUNK_CONFIG["max_duration"], chunk_duration))
     
     current_time = start_time
     for i, chunk in enumerate(chunks):
-        # Duración proporcional al texto
-        chunk_ratio = len(chunk) / total_chars if total_chars > 0 else 1.0 / len(chunks)
-        chunk_duration = total_duration * chunk_ratio
-        
-        # Aplicar límites de duración
-        chunk_duration = max(CHUNK_CONFIG["min_duration"], 
-                           min(CHUNK_CONFIG["max_duration"], chunk_duration))
-        
-        # Para el último chunk, usar el tiempo restante
+        # Para el último chunk, usar exactamente el tiempo final
         if i == len(chunks) - 1:
             chunk_end = end_time
         else:
             chunk_end = current_time + chunk_duration
-            # Asegurar que no exceda el final
+            # No exceder el tiempo final
             chunk_end = min(chunk_end, end_time)
         
+        # CLAVE: No adelantar el inicio, mantener timing natural
+        # Los chunks posteriores pueden tener overlap controlado
+        if i > 0:
+            # Pequeño overlap para transición suave, pero no adelantar
+            overlap = min(0.2, chunk_duration * 0.1)
+            chunk_start = max(current_time - overlap, start_time)
+        else:
+            chunk_start = current_time
+        
         segments.append({
-            "start": current_time,
+            "start": chunk_start,
             "end": chunk_end,
             "text": chunk
         })
         
-        current_time = chunk_end
+        # Avanzar tiempo para el siguiente chunk
+        current_time = chunk_start + (chunk_duration * 0.9)  # 90% para overlap controlado
     
     return segments
 
-def process_segments_with_chunking(segments):
+def process_segments_with_precise_timing(segments):
     """
-    Procesa segmentos aplicando chunking inteligente
+    Procesa segmentos usando timing preciso de palabras individuales
     """
     chunked_segments = []
     
@@ -176,33 +180,49 @@ def process_segments_with_chunking(segments):
             
         start_time = segment["start"]
         end_time = segment["end"]
+        words_timing = segment.get("words", [])
         
-        # Dividir texto inteligentemente
-        chunks = split_text_intelligently(text, CHUNK_CONFIG["max_chars"])
-        
-        # Distribuir chunks temporalmente
-        if CHUNK_CONFIG["word_distribution"]:
-            chunk_segments = distribute_chunks_temporally(chunks, start_time, end_time)
-        else:
-            # Distribución uniforme simple
-            duration_per_chunk = (end_time - start_time) / len(chunks)
-            chunk_segments = []
-            for i, chunk in enumerate(chunks):
-                chunk_start = start_time + (i * duration_per_chunk)
-                chunk_end = start_time + ((i + 1) * duration_per_chunk)
-                chunk_segments.append({
+        # Si tenemos timing de palabras, usarlo para sincronización perfecta
+        if words_timing and len(words_timing) > 0:
+            # Agrupar palabras en chunks de máximo 3
+            word_chunks = []
+            current_chunk = []
+            
+            for word_info in words_timing:
+                current_chunk.append(word_info)
+                
+                if len(current_chunk) >= CHUNK_CONFIG["max_words"]:
+                    word_chunks.append(current_chunk)
+                    current_chunk = []
+            
+            # Agregar último chunk si existe
+            if current_chunk:
+                word_chunks.append(current_chunk)
+            
+            # Crear segmentos con timing preciso
+            for chunk in word_chunks:
+                chunk_start = chunk[0]["start"]  # Inicio de primera palabra
+                chunk_end = chunk[-1]["end"]     # Final de última palabra
+                chunk_text = " ".join([w["word"] for w in chunk])
+                
+                chunked_segments.append({
                     "start": chunk_start,
                     "end": chunk_end,
-                    "text": chunk
+                    "text": chunk_text
                 })
         
-        chunked_segments.extend(chunk_segments)
+        else:
+            # Fallback: usar método anterior si no hay timing de palabras
+            chunks = split_text_intelligently(text, CHUNK_CONFIG["max_words"])
+            chunk_segments = distribute_chunks_temporally(chunks, start_time, end_time)
+            chunked_segments.extend(chunk_segments)
     
     return chunked_segments
 
 def transcribe_with_chunking(video_path):
     """Transcribe video con segmentación inteligente"""
-    print("🎯 INICIANDO TRANSCRIPCIÓN CON CHUNKING INTELIGENTE")
+    print("🎯 INICIANDO TRANSCRIPCIÓN CON CHUNKING ULTRA-GRADUAL")
+    print("   📝 Máximo 3 palabras por subtítulo")
     print(f"📹 Video: {video_path}")
     
     # Configurar rutas
@@ -245,26 +265,40 @@ def transcribe_with_chunking(video_path):
             vad_parameters=VAD_CONFIG
         )
         
-        # Convertir segmentos a lista
+        # Convertir segmentos a lista CON timing de palabras
         segments_list = []
         for segment in segments:
-            segments_list.append({
+            segment_data = {
                 "start": segment.start,
                 "end": segment.end,
-                "text": segment.text.strip()
-            })
+                "text": segment.text.strip(),
+                "words": []
+            }
+            
+            # Capturar timing de palabras individuales si están disponibles
+            if hasattr(segment, 'words') and segment.words:
+                for word in segment.words:
+                    segment_data["words"].append({
+                        "word": word.word.strip(),
+                        "start": word.start,
+                        "end": word.end,
+                        "probability": getattr(word, 'probability', 1.0)
+                    })
+            
+            segments_list.append(segment_data)
         
         print(f"✅ Transcripción base completada: {len(segments_list)} segmentos")
+        print(f"🎯 Detectados word timestamps: {sum(1 for s in segments_list if s.get('words', []))}/{len(segments_list)} segmentos")
         
     except Exception as e:
         print(f"❌ Error en transcripción: {e}")
         return False
     
-    print("📝 Aplicando chunking inteligente...")
+    print("📝 Aplicando chunking ultra-gradual (máximo 3 palabras)...")
     
     try:
-        # Procesar segmentos con chunking
-        chunked_segments = process_segments_with_chunking(segments_list)
+        # Procesar segmentos con chunking usando timing preciso
+        chunked_segments = process_segments_with_precise_timing(segments_list)
         
         # Generar SRT con chunks
         srt_content = ""
@@ -297,12 +331,13 @@ def transcribe_with_chunking(video_path):
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(chunked_result, f, ensure_ascii=False, indent=2)
         
-        print(f"✅ CHUNKING COMPLETADO:")
+        print(f"✅ CHUNKING ULTRA-GRADUAL COMPLETADO:")
         print(f"   📄 SRT: {srt_path}")
         print(f"   📊 JSON: {json_path}")
         print(f"   🧩 Segmentos originales: {len(segments_list)}")
         print(f"   🎯 Segmentos chunked: {len(chunked_segments)}")
         print(f"   📈 Ratio chunking: {len(chunked_segments) / len(segments_list):.1f}x")
+        print(f"   📝 Máximo 3 palabras por subtítulo")
         
         return True
         
@@ -322,14 +357,14 @@ def main():
         sys.exit(1)
     
     print("=" * 60)
-    print("🎯 TRANSCRIPTOR CON CHUNKING INTELIGENTE")
-    print("   Segmenta subtítulos para mostrar palabras gradualmente")
+    print("🎯 TRANSCRIPTOR CON CHUNKING ULTRA-GRADUAL")
+    print("   Máximo 3 palabras por subtítulo - Lectura ultra-fluida")
     print("=" * 60)
     
     success = transcribe_with_chunking(video_path)
     
     if success:
-        print("🎉 ¡TRANSCRIPCIÓN CON CHUNKING EXITOSA!")
+        print("🎉 ¡TRANSCRIPCIÓN ULTRA-GRADUAL EXITOSA!")
     else:
         print("💥 Error en la transcripción")
         sys.exit(1)
