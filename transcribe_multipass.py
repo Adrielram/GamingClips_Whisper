@@ -167,6 +167,69 @@ CHUNK_CONFIG = {
     "max_silence_extend": 0.5
 }
 
+class MultipassConfig:
+    """
+    Configuración para transcripción multipass
+    """
+    
+    def __init__(self, 
+                 model_name="large-v3", 
+                 device="cuda", 
+                 compute_type="float16",
+                 passes=["conservative", "aggressive", "ultra_aggressive"]):
+        self.model_name = model_name
+        self.device = device
+        self.compute_type = compute_type
+        self.passes = passes
+        
+    def get_config_for_pass(self, pass_name):
+        """Obtener configuración para una pasada específica"""
+        if pass_name == "conservative":
+            return CONSERVATIVE_CONFIG
+        elif pass_name == "aggressive":
+            return AGGRESSIVE_CONFIG
+        elif pass_name == "ultra_aggressive":
+            return ULTRA_AGGRESSIVE_CONFIG
+        elif pass_name == "micro_speech":
+            return MICRO_SPEECH_CONFIG
+        elif pass_name == "noise_robust":
+            return NOISE_ROBUST_CONFIG
+        else:
+            return CONSERVATIVE_CONFIG
+
+class TranscriptionResult:
+    """
+    Resultado de transcripción multipass
+    """
+    
+    def __init__(self, segments, metadata=None):
+        self.segments = segments
+        self.metadata = metadata or {}
+        
+    def to_text(self):
+        """Convertir a texto plano"""
+        return " ".join([seg['text'] for seg in self.segments])
+    
+    def to_srt(self):
+        """Convertir a formato SRT"""
+        srt_lines = []
+        for i, seg in enumerate(self.segments, 1):
+            start_time = self.format_srt_time(seg['start'])
+            end_time = self.format_srt_time(seg['end'])
+            srt_lines.append(f"{i}")
+            srt_lines.append(f"{start_time} --> {end_time}")
+            srt_lines.append(seg['text'])
+            srt_lines.append("")
+        return "\n".join(srt_lines)
+    
+    def format_srt_time(self, seconds):
+        """Formatear tiempo para SRT"""
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        millisecs = int((seconds % 1) * 1000)
+        return f"{hours:02d}:{minutes:02d}:{secs:02d},{millisecs:03d}"
+
 def format_timestamp(seconds):
     """Convierte segundos a formato SRT (HH:MM:SS,mmm)"""
     td = timedelta(seconds=seconds)
@@ -418,7 +481,7 @@ def fill_gaps_with_lower_confidence(merged_segments, all_segments, min_gap_durat
 def merge_multipass_results_v2(conservative_segments, aggressive_segments, ultra_aggressive_segments,
                                micro_speech_segments, noise_robust_segments):
     """Merge inteligente de resultados de 5 pasadas con priorización especializada"""
-    print("🔄 Realizando merge inteligente de 5 pasadas...")
+    print("Realizando merge inteligente de 5 pasadas...")
     
     # Combinar todos los segmentos
     all_segments = []
@@ -431,7 +494,7 @@ def merge_multipass_results_v2(conservative_segments, aggressive_segments, ultra
     # Ordenar por tiempo de inicio
     all_segments.sort(key=lambda x: x["start"])
     
-    print(f"📊 Segmentos totales antes del merge: {len(all_segments)}")
+    print(f"Segmentos totales antes del merge: {len(all_segments)}")
     print(f"   • Conservadora: {len(conservative_segments)}")
     print(f"   • Agresiva: {len(aggressive_segments)}")
     print(f"   • Ultra-agresiva: {len(ultra_aggressive_segments)}")
@@ -440,7 +503,7 @@ def merge_multipass_results_v2(conservative_segments, aggressive_segments, ultra
     
     # Detectar superposiciones
     overlaps = detect_overlaps(all_segments)
-    print(f"⚠️ Detectadas {len(overlaps)} superposiciones")
+    print(f"Detectadas {len(overlaps)} superposiciones")
     
     # Resolver conflictos con priorización especializada
     merged_segments = []
@@ -477,7 +540,7 @@ def merge_multipass_results_v2(conservative_segments, aggressive_segments, ultra
     # Ordenar resultado final
     merged_segments.sort(key=lambda x: x["start"])
     
-    print(f"✅ Merge completado: {len(merged_segments)} segmentos finales")
+    print(f"Merge completado: {len(merged_segments)} segmentos finales")
     return merged_segments
 
 def choose_best_segment_v2(conflicting_segments):
@@ -786,6 +849,119 @@ def main():
     else:
         print("💥 Error en la transcripción multipass")
         sys.exit(1)
+
+class MultipassTranscriber:
+    """
+    Clase para transcripción multipass compatible con sistema avanzado
+    """
+    
+    def __init__(self, model_name="large-v3", device="cuda", compute_type="float16"):
+        """Inicializar transcriptor multipass"""
+        self.model_name = model_name
+        self.device = device
+        self.compute_type = compute_type
+        self.model = None
+        
+    def load_model(self):
+        """Cargar modelo Whisper"""
+        if self.model is None:
+            self.model = WhisperModel(
+                self.model_name,
+                device=self.device,
+                compute_type=self.compute_type
+            )
+    
+    def transcribe_file(self, audio_path, config_name="conservative"):
+        """
+        Transcribir archivo usando configuración específica
+        
+        Args:
+            audio_path: Ruta al archivo de audio
+            config_name: Nombre de configuración (conservative, aggressive, ultra_aggressive)
+            
+        Returns:
+            Lista de segmentos transcriptos
+        """
+        self.load_model()
+        
+        # Seleccionar configuración
+        if config_name == "conservative":
+            config = CONSERVATIVE_CONFIG
+        elif config_name == "aggressive":
+            config = AGGRESSIVE_CONFIG
+        elif config_name == "ultra_aggressive":
+            config = ULTRA_AGGRESSIVE_CONFIG
+        else:
+            config = CONSERVATIVE_CONFIG
+        
+        # Ejecutar transcripción
+        # Filtrar parámetros que no son para transcribe()
+        transcribe_params = {k: v for k, v in config.items() 
+                           if k not in ['model', 'device', 'compute_type']}
+        
+        segments, info = self.model.transcribe(audio_path, **transcribe_params)
+        
+        # Convertir a lista
+        result_segments = []
+        for segment in segments:
+            result_segments.append({
+                'start': segment.start,
+                'end': segment.end,
+                'text': segment.text.strip(),
+                'confidence': getattr(segment, 'avg_logprob', 0.0),
+                'config': config_name
+            })
+        
+        return result_segments
+    
+    def multipass_transcribe(self, audio_path, output_path=None):
+        """
+        Ejecutar transcripción multipass completa
+        
+        Args:
+            audio_path: Ruta al archivo de audio
+            output_path: Ruta de salida (opcional)
+            
+        Returns:
+            Segmentos finales fusionados
+        """
+        print("🚀 Iniciando transcripción multipass...")
+        
+        # Ejecutar todas las pasadas (5 en total)
+        conservative_segments = transcribe_with_config(self.model, audio_path, CONSERVATIVE_CONFIG, "CONSERVADORA")
+        aggressive_segments = transcribe_with_config(self.model, audio_path, AGGRESSIVE_CONFIG, "AGRESIVA") 
+        ultra_segments = transcribe_with_config(self.model, audio_path, ULTRA_AGGRESSIVE_CONFIG, "ULTRA-AGRESIVA")
+        micro_speech_segments = transcribe_with_config(self.model, audio_path, MICRO_SPEECH_CONFIG, "MICRO-SPEECH")
+        noise_robust_segments = transcribe_with_config(self.model, audio_path, NOISE_ROBUST_CONFIG, "NOISE-ROBUST")
+        
+        print(f"📊 Conservadora: {len(conservative_segments)} segmentos")
+        print(f"📊 Agresiva: {len(aggressive_segments)} segmentos")
+        print(f"📊 Ultra-agresiva: {len(ultra_segments)} segmentos")
+        print(f"📊 Micro-speech: {len(micro_speech_segments)} segmentos")
+        print(f"📊 Noise-robust: {len(noise_robust_segments)} segmentos")
+        
+        # Fusionar resultados de las 5 pasadas
+        final_segments = merge_multipass_results_v2(
+            conservative_segments,
+            aggressive_segments, 
+            ultra_segments,
+            micro_speech_segments,
+            noise_robust_segments
+        )
+        
+        print(f"📊 Final: {len(final_segments)} segmentos")
+        
+        # Guardar si se especifica salida
+        if output_path:
+            self._save_segments_to_file(final_segments, output_path)
+        
+        return final_segments
+    
+    def _save_segments_to_file(self, segments, output_path):
+        """Guardar segmentos a archivo"""
+        with open(output_path, 'w', encoding='utf-8') as f:
+            for segment in segments:
+                f.write(f"[{segment['start']:.2f}s - {segment['end']:.2f}s] {segment['text']}\n")
 
 if __name__ == "__main__":
     main()

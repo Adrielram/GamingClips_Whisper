@@ -1,0 +1,21 @@
+{
+  "verification_date": "1758429342.7695663",
+  "python_version": "3.13.3",
+  "system_checks": {
+    "python_version": true,
+    "basic_dependencies": true,
+    "vad_models": true,
+    "audio_processing": true,
+    "machine_learning": true,
+    "system_files": true,
+    "directories": true,
+    "disk_space": true,
+    "memory": true,
+    "vad_hybrid_test": true,
+    "contextual_vad_test": true,
+    "advanced_transcriber_test": true,
+    "adaptive_learning_test": true
+  },
+  "overall_status": "OK",
+  "recommendations": []
+}

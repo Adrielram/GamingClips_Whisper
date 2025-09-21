@@ -1,0 +1,9 @@
+{
+  "total_files_processed": 1,
+  "total_processing_time": 7.0496532917022705,
+  "average_speech_ratio": 0.772406981153707,
+  "context_distribution": {
+    "exploration": 1
+  },
+  "vad_accuracy_feedback": []
+}

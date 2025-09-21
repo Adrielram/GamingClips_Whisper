@@ -1,0 +1,21 @@
+{
+  "test_user": {
+    "user_id": "test_user",
+    "creation_date": "2025-09-21T01:45:26.561571",
+    "last_updated": "2025-09-21T02:13:55.154521",
+    "preferred_gaming_contexts": {
+      "combat": 0.6074687500000002
+    },
+    "optimal_vad_parameters": {
+      "silero_threshold": 0.5
+    },
+    "transcription_preferences": {},
+    "usage_patterns": {},
+    "frequent_words": {},
+    "speech_characteristics": {},
+    "total_sessions": 4,
+    "improvement_rate": 0.0,
+    "satisfaction_score": 0.5,
+    "learning_effectiveness": 0.0
+  }
+}
