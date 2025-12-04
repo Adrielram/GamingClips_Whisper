@@ -1,5 +1,16 @@
 # 🎮 GameClipping - Transcriptor Ultra-Preciso
 
+<div align="center">
+
+![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Whisper](https://img.shields.io/badge/OpenAI_Whisper-412991?style=for-the-badge&logo=openai&logoColor=white)
+![FFmpeg](https://img.shields.io/badge/FFmpeg-007808?style=for-the-badge&logo=ffmpeg&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+
+**Ultra-precise gaming video transcription using Whisper AI. Optimized for Argentine Spanish and gaming content.**
+
+</div>
+
 **Transcripción automática de videos de gaming a subtítulos con precisión palabra por palabra.**
 
 Optimizado para español argentino y contenido de gaming. Usa modelos de IA avanzados para generar subtítulos sincronizados con timestamps precisos.
@@ -372,6 +383,19 @@ python tools/analizar_transcripcion.py archivo.srt
 - 🔍 Huecos temporales largos
 - 🔍 Problemas de sincronización
 - 🔍 Drift temporal acumulativo
+
+---
+
+## 🗂️ Guía Rápida de Scripts
+
+| Script | Cuándo Usarlo |
+|--------|---------------|
+| `transcribe_FINAL.bat` | ✅ Uso general - Primera opción |
+| `transcribe_MULTIPASS.bat` | ⭐ **Máxima calidad** - Mejor cobertura |
+| `transcribe_MEJORADO.bat` | 🔤 Problemas de palabras incorrectas |
+| `transcribe_SYNC_PERFECT.bat` | ⏱️ Problemas de sincronización |
+| `transcribe_CHUNKED.bat` | 📝 Subtítulos muy largos |
+| `transcribe_ENHANCED.bat` | 🎵 Audio de baja calidad |
 
 ---
 
